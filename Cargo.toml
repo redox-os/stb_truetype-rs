@@ -1,0 +1,7 @@
+[package]
+name = "stb_truetype"
+version = "0.1.0"
+authors = ["Dylan Ede <dylanede@googlemail.com>"]
+
+[dependencies]
+byteorder = "0.4"
