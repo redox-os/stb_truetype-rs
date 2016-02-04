@@ -1,10 +1,14 @@
 # stb_truetype-rs
 
+[![Build Status](https://travis-ci.org/dylanede/stb_truetype-rs.svg?branch=master)](https://travis-ci.org/dylanede/stb_truetype-rs)
+
 This is a straight translation of
 [stb_truetype.h](https://github.com/nothings/stb/blob/master/stb_truetype.h)
 from C to Rust. It is intended as a stopgap dependency for libraries that deal
 with fonts until something better, written in idiomatic Rust, is available. This
 library is not an example of good Rust code, but it works.
+
+## [Documentation](https://dylanede.github.io/stb_truetype-rs)
 
 ## License
 
