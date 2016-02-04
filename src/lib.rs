@@ -1,9 +1,10 @@
 extern crate byteorder;
 use byteorder::ByteOrder;
 use byteorder::BigEndian as BE;
+use std::borrow::Cow;
 
 pub struct FontInfo<'a> {
-    data: &'a [u8],       // pointer to .ttf file
+    data:Cow<'a, [u8]>,       // pointer to .ttf file
     // fontstart: usize,       // offset of start of font
     num_glyphs: u32,       // number of glyphs, needed for range checking
     loca: u32,
@@ -32,7 +33,13 @@ pub struct Vertex {
     pub y: i16,
     pub cx: i16,
     pub cy: i16,
-    pub type_: VertexType
+    type_: u8
+}
+
+impl Vertex {
+    pub fn vertex_type(&self) -> VertexType {
+        unsafe{::std::mem::transmute(self.type_)}
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -193,18 +200,18 @@ impl<'a> FontInfo<'a> {
 
     /// Given an offset into the file that defines a font, this function builds
     /// the necessary cached info for the rest of the system.
-    pub fn new(data: &'a [u8], fontstart: usize) -> Option<FontInfo<'a>> {
-        let cmap = find_table(data, fontstart, b"cmap"); // required
-        let loca = find_table(data, fontstart, b"loca"); // required
-        let head = find_table(data, fontstart, b"head"); // required
-        let glyf = find_table(data, fontstart, b"glyf"); // required
-        let hhea = find_table(data, fontstart, b"hhea"); // required
-        let hmtx = find_table(data, fontstart, b"hmtx"); // required
-        let kern = find_table(data, fontstart, b"kern"); // not required
+    pub fn new(data: Cow<'a, [u8]>, fontstart: usize) -> Option<FontInfo<'a>> {
+        let cmap = find_table(&data, fontstart, b"cmap"); // required
+        let loca = find_table(&data, fontstart, b"loca"); // required
+        let head = find_table(&data, fontstart, b"head"); // required
+        let glyf = find_table(&data, fontstart, b"glyf"); // required
+        let hhea = find_table(&data, fontstart, b"hhea"); // required
+        let hmtx = find_table(&data, fontstart, b"hmtx"); // required
+        let kern = find_table(&data, fontstart, b"kern"); // not required
         if cmap == 0 || loca == 0 || head == 0 || glyf == 0 || hhea == 0 || hmtx == 0 {
             return None;
         }
-        let t = find_table(data, fontstart, b"maxp");
+        let t = find_table(&data, fontstart, b"maxp");
         let num_glyphs = if t != 0 {
             BE::read_u16(&data[t as usize +4..])
         } else {
@@ -240,7 +247,7 @@ impl<'a> FontInfo<'a> {
         if index_map == 0 {
             return None
         }
-
+        let index_to_loc_format = BE::read_u16(&data[head as usize + 50..]) as u32;
         Some(FontInfo {
             // fontstart: fontstart,
             data: data,
@@ -252,8 +259,12 @@ impl<'a> FontInfo<'a> {
             kern: kern,
             num_glyphs: num_glyphs as u32,
             index_map: index_map,
-            index_to_loc_format: BE::read_u16(&data[head as usize + 50..]) as u32
+            index_to_loc_format: index_to_loc_format
         })
+    }
+
+    pub fn get_num_glyphs(&self) -> u32 {
+        self.num_glyphs
     }
 
     /// If you're going to perform multiple operations on the same character
@@ -261,7 +272,7 @@ impl<'a> FontInfo<'a> {
     /// going to process, then use glyph-based functions instead of the
     /// codepoint-based functions.
     pub fn find_glyph_index(&self, unicode_codepoint: u32) -> u32 {
-        let data = self.data;
+        let data = &self.data;
         let index_map = &data[self.index_map as usize..];//self.index_map as usize;
 
         let format = BE::read_u16(index_map);
@@ -376,7 +387,6 @@ impl<'a> FontInfo<'a> {
     fn get_glyf_offset(&self, glyph_index: u32) -> Option<u32> {
         let g1;
         let g2;
-        println!("{:?}", self.num_glyphs);
         if glyph_index >= self.num_glyphs || self.index_to_loc_format >= 2 {
             // glyph index out of range or unknown index->glyph map format
             return None;
@@ -436,7 +446,7 @@ impl<'a> FontInfo<'a> {
             if start_off {
                 if was_off {
                     vertices[*num_vertices] = Vertex {
-                        type_: CurveTo,
+                        type_: CurveTo as u8,
                         x: ((cx+scx)>>1) as i16,
                         y: ((cy+scy)>>1) as i16,
                         cx: cx as i16,
@@ -445,7 +455,7 @@ impl<'a> FontInfo<'a> {
                     *num_vertices += 1;
                 }
                 vertices[*num_vertices] = Vertex {
-                    type_: CurveTo,
+                    type_: CurveTo as u8,
                     x: sx as i16,
                     y: sy as i16,
                     cx: scx as i16,
@@ -454,7 +464,7 @@ impl<'a> FontInfo<'a> {
             } else {
                 vertices[*num_vertices] = if was_off {
                     Vertex {
-                        type_: CurveTo,
+                        type_: CurveTo as u8,
                         x: sx as i16,
                         y: sy as i16,
                         cx: cx as i16,
@@ -462,7 +472,7 @@ impl<'a> FontInfo<'a> {
                     }
                 } else {
                     Vertex {
-                        type_: LineTo,
+                        type_: LineTo as u8,
                         x: sx as i16,
                         y: sy as i16,
                         cx: 0,
@@ -516,13 +526,16 @@ impl<'a> FontInfo<'a> {
                 } else {
                     flagcount -= 1;
                 }
-                vertices[off + i].type_ = unsafe{::std::mem::transmute(flags)};
+                vertices[off + i].type_ = flags;
             }
 
             // now load x coordinates
             let mut x = 0i32;
             for i in 0..n {
-                flags = vertices[off + i].type_ as u8;
+                let flags = vertices[off + i].type_;
+                if flags == 255 {
+                    println!("{:?}", flags);
+                }
                 if flags & 2 != 0 {
                     let dx = points[0] as i32;
                     points = &points[1..];
@@ -543,7 +556,7 @@ impl<'a> FontInfo<'a> {
             // now load y coordinates
             let mut y = 0i32;
             for i in 0..n {
-                flags = vertices[off + i].type_ as u8;
+                let flags = vertices[off + i].type_;
                 if flags & 4 != 0 {
                     let dy = points[0] as i32;
                     points = &points[1..];
@@ -554,6 +567,7 @@ impl<'a> FontInfo<'a> {
                     }
                 } else {
                     if flags & 32 == 0 {
+                        y += points[0] as i32 * 256 + points[1] as i32;
                         points = &points[2..];
                     }
                 }
@@ -571,7 +585,7 @@ impl<'a> FontInfo<'a> {
             let mut i = 0;
             let mut j = 0;
             while i < n {
-                let flags = vertices[off + i].type_ as u8;
+                let flags = vertices[off + i].type_;
                 x = vertices[off + i].x as i32;
                 y = vertices[off + i].y as i32;
 
@@ -602,7 +616,7 @@ impl<'a> FontInfo<'a> {
                         sy = y;
                     }
                     vertices[num_vertices] = Vertex {
-                        type_: MoveTo,
+                        type_: MoveTo as u8,
                         x: sx as i16,
                         y: sy as i16,
                         cx: 0,
@@ -617,7 +631,7 @@ impl<'a> FontInfo<'a> {
                         if was_off {
                             // two off-curve control points in a row means interpolate an on-curve midpoint
                             vertices[num_vertices] = Vertex {
-                                type_: CurveTo,
+                                type_: CurveTo as u8,
                                 x: ((cx+x) >> 1) as i16,
                                 y: ((cy+y) >> 1) as i16,
                                 cx: cx as i16,
@@ -631,7 +645,7 @@ impl<'a> FontInfo<'a> {
                     } else {
                         if was_off {
                             vertices[num_vertices] = Vertex {
-                                type_: CurveTo,
+                                type_: CurveTo as u8,
                                 x: x as i16,
                                 y: y as i16,
                                 cx: cx as i16,
@@ -639,7 +653,7 @@ impl<'a> FontInfo<'a> {
                             }
                         } else {
                             vertices[num_vertices] = Vertex {
-                                type_: LineTo,
+                                type_: LineTo as u8,
                                 x: x as i16,
                                 y: y as i16,
                                 cx: 0 as i16,
@@ -899,6 +913,7 @@ impl<'a> FontInfo<'a> {
     }
 
 }
+// The following code is an unfinished port of the rasteriser in stb_truetype.h
 /*
 struct Edge {
     x0: f32,
