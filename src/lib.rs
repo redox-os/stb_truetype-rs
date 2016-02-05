@@ -149,10 +149,10 @@ enum MacLang { // languageID for PLATFORM_ID_MAC
 }
  */
 
-/// # accessors to parse data from file
+// # accessors to parse data from file
 
-/// on platforms that don't allow misaligned reads, if we want to allow
-/// truetype fonts that aren't padded to alignment, define ALLOW_UNALIGNED_TRUETYPE
+// on platforms that don't allow misaligned reads, if we want to allow
+// truetype fonts that aren't padded to alignment, define ALLOW_UNALIGNED_TRUETYPE
 
 pub fn is_font(font: &[u8]) -> bool {
     let tag = &font[0..4];
