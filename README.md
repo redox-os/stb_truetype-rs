@@ -8,6 +8,13 @@ from C to Rust. It is intended as a stopgap dependency for libraries that deal
 with fonts until something better, written in idiomatic Rust, is available. This
 library is not an example of good Rust code, but it works.
 
+If you want to use this crate directly, add the following to your Cargo.toml:
+
+```toml
+[dependencies]
+stb_truetype = "0.1"
+```
+
 Please note that the documentation provided is also a straight copy from the
 original code.
 
