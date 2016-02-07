@@ -528,8 +528,8 @@ impl<'a> FontInfo<'a> {
             let n = 1 + BE::read_u16(&end_points_of_contours[number_of_contours*2 - 2..]) as usize;
 
             let m = n + 2 * number_of_contours; // a loose bound on how many vertices we might need
-            let mut vertices: Vec<Vertex> = Vec::with_capacity(m);
-            unsafe{ vertices.set_len(m) };
+            let dummy_vertex = Vertex { x: 0, y: 0, cx: 0, cy: 0, type_: VertexType::MoveTo as u8 };
+            let mut vertices = vec![dummy_vertex; m];
 
             let mut next_move = 0;
             let mut flagcount = 0;
@@ -696,7 +696,7 @@ impl<'a> FontInfo<'a> {
             }
             close_shape(&mut vertices[..], &mut num_vertices, was_off, start_off, sx, sy, scx, scy, cx, cy);
             assert!(num_vertices <= vertices.len());
-            unsafe{vertices.set_len(num_vertices)};
+            vertices.truncate(num_vertices);
             vertices
         } else if number_of_contours == -1 {
             // Compound shapes
