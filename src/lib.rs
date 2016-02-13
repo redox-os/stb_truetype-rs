@@ -366,7 +366,7 @@ impl<'a> FontInfo<'a> {
                         }
                     }
                 }
-                unreachable!()
+                return 0;
             }
             n => panic!("Index map format unsupported: {}", n)
         }
