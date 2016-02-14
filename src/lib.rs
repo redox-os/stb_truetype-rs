@@ -790,14 +790,14 @@ impl<'a> FontInfo<'a> {
             return 0;
         }
 
-        let mut l = 0;
-        let mut r = (BE::read_u16(&kern[10..]) - 1) as u32;
+        let mut l: i32 = 0;
+        let mut r: i32 = (BE::read_u16(&kern[10..]) - 1) as i32;
         let needle = glyph_1 << 16 | glyph_2;
         while l <= r {
             let m = (l + r) >> 1;
             let straw = BE::read_u32(&kern[18+(m as usize)*6..]); // note: unaligned read
             if needle < straw {
-                r = m -1;
+                r = m - 1;
             } else if needle > straw {
                 l = m + 1;
             } else {
