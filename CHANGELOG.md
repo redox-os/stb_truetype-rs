@@ -1,3 +1,8 @@
+#0.2.0
+
+`FontInfo` is now generic in the storage for the font data, allowing flexible
+management of font data lifetimes. This is a breaking change.
+
 ##0.1.2
 
 Fix for edge case behaviour for `get_glyph_pair_kern_advance` by switching to
