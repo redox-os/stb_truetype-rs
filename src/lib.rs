@@ -1,10 +1,10 @@
 extern crate byteorder;
 use byteorder::ByteOrder;
 use byteorder::BigEndian as BE;
-use std::borrow::Cow;
-
-pub struct FontInfo<'a> {
-    data:Cow<'a, [u8]>,       // pointer to .ttf file
+use ::std::ops::Deref;
+#[derive(Clone)]
+pub struct FontInfo<Data: Deref<Target=[u8]>> {
+    data: Data,       // pointer to .ttf file
     // fontstart: usize,       // offset of start of font
     num_glyphs: u32,       // number of glyphs, needed for range checking
     loca: u32,
@@ -196,11 +196,11 @@ pub fn get_font_offset_for_index(font_collection: &[u8], index: i32) -> Option<u
    return None;
 }
 
-impl<'a> FontInfo<'a> {
+impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
 
     /// Given an offset into the file that defines a font, this function builds
     /// the necessary cached info for the rest of the system.
-    pub fn new(data: Cow<'a, [u8]>, fontstart: usize) -> Option<FontInfo<'a>> {
+    pub fn new(data: Data, fontstart: usize) -> Option<FontInfo<Data>> {
         let cmap = find_table(&data, fontstart, b"cmap"); // required
         let loca = find_table(&data, fontstart, b"loca"); // required
         let head = find_table(&data, fontstart, b"head"); // required
