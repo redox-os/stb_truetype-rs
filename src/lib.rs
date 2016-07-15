@@ -72,8 +72,9 @@ pub struct VMetrics {
     pub line_gap: i32
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum PlatformID { // platformID
+pub enum PlatformID { // platformID
    Unicode   = 0,
    Mac       = 1,
    ISO       = 2,
@@ -90,18 +91,30 @@ fn platform_id(v: u16) -> Option<PlatformID> {
     }
 }
 
-/*
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum UnicodeEID { // encodingID for PLATFORM_ID_UNICODE
+pub enum UnicodeEID { // encodingID for PLATFORM_ID_UNICODE
    Unicode_1_0       = 0,
    Unicode_1_1       = 1,
    ISO_10646         = 2,
    Unicode_2_0_BMP   = 3,
    Unicode_2_0_Full = 4
-}*/
+}
+fn unicode_eid(v: u16) -> Option<UnicodeEID> {
+    use UnicodeEID::*;
+    match v {
+        0 => Some(Unicode_1_0),
+        1 => Some(Unicode_1_1),
+        2 => Some(ISO_10646),
+        3 => Some(Unicode_2_0_BMP),
+        4 => Some(Unicode_2_0_Full),
+        _ => None,
+    }
+}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum MicrosoftEID { // encodingID for PLATFORM_ID_MICROSOFT
+pub enum MicrosoftEID { // encodingID for PLATFORM_ID_MICROSOFT
    Symbol        =0,
    UnicodeBMP    =1,
    Shiftjis      =2,
@@ -118,15 +131,30 @@ fn microsoft_eid(v: u16) -> Option<MicrosoftEID> {
     }
 }
 
-/*
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum MacEID { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
+pub enum MacEID { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
    Roman        =0,   Arabic       =4,
    Japanese     =1,   Hebrew       =5,
    ChineseTrad  =2,   Greek        =6,
    Korean       =3,   Russian      =7
 }
+fn mac_eid(v: u16) -> Option<MacEID> {
+    use MacEID::*;
+    match v {
+        0 => Some(Roman),
+        1 => Some(Japanese),
+        2 => Some(ChineseTrad),
+        3 => Some(Korean),
+        4 => Some(Arabic),
+        5 => Some(Hebrew),
+        6 => Some(Greek),
+        7 => Some(Russian),
+        _ => None
+    }
+}
 
+/*
 #[repr(C)]
 enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
        // problematic because there are e.g. 16 english LCIDs and 16 arabic LCIDs
@@ -149,6 +177,22 @@ enum MacLang { // languageID for PLATFORM_ID_MAC
    Italian      =3 ,   ChineseTrad =19
 }
  */
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PlatformEncodingID {
+    Unicode(Result<UnicodeEID, u16>),
+    Mac(Result<MacEID, u16>),
+    ISO(u16),
+    Microsoft(Result<MicrosoftEID, u16>),
+}
+fn platform_encoding_id(platform_id: PlatformID, encoding_id: u16) -> PlatformEncodingID {
+    match platform_id {
+        PlatformID::Unicode => PlatformEncodingID::Unicode(unicode_eid(encoding_id).ok_or(encoding_id)),
+        PlatformID::Mac => PlatformEncodingID::Mac(mac_eid(encoding_id).ok_or(encoding_id)),
+        PlatformID::ISO => PlatformEncodingID::ISO(encoding_id),
+        PlatformID::Microsoft => PlatformEncodingID::Microsoft(microsoft_eid(encoding_id).ok_or(encoding_id)),
+    }
+}
 
 // # accessors to parse data from file
 
@@ -949,7 +993,7 @@ pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
 }
 
 impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
-    type Item = (&'a [u8], u16, u16, u16, u16);
+    type Item = (&'a [u8], Option<PlatformEncodingID>, u16, u16);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.count {
@@ -958,8 +1002,11 @@ impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
 
         let loc = self.font_info.name as usize + 6 + 12 * self.index;
 
-        let platform_id = BE::read_u16(&self.font_info.data[loc + 0..]);
-        let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
+        let platform_encoding_id = platform_id(BE::read_u16(&self.font_info.data[loc + 0..]))
+            .map(|p_id| {
+                let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
+                platform_encoding_id(p_id, encoding_id)
+            });
         let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
         let name_id = BE::read_u16(&self.font_info.data[loc + 6..]);
         let length = BE::read_u16(&self.font_info.data[loc + 8..]) as usize;
@@ -967,7 +1014,7 @@ impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
 
         self.index += 1;
 
-        Some((&self.font_info.data[offset..offset+length], platform_id, encoding_id, language_id, name_id))
+        Some((&self.font_info.data[offset..offset+length], platform_encoding_id, language_id, name_id))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
