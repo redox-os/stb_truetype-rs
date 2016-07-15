@@ -7,8 +7,22 @@ fn main() {
     let font = FontInfo::new(Cow::Borrowed(file), 0).unwrap();
 
     for info in font.get_font_name_strings() {
-        let (name, pl_en, la, na) = info;
-        let name8 = ::std::str::from_utf8(name);
-        println!("{}, {:?}, {:?}, {:?}", name8.ok().unwrap_or("(not UTF-8)"), pl_en, la, na);
+        let (name, pl_en_la, na) = info;
+        let name = (match pl_en_la {
+            Some(stb_truetype::PlatformEncodingLanguageID::Mac(Some(Ok(stb_truetype::MacEID::Roman)), _)) => ::std::str::from_utf8(name).ok().map(Cow::Borrowed),
+            Some(stb_truetype::PlatformEncodingLanguageID::Microsoft(Some(Ok(stb_truetype::MicrosoftEID::UnicodeBMP)), _)) => {
+                let name16be = unsafe { ::std::slice::from_raw_parts(name.as_ptr() as *const u16, name.len() / 2) };
+                let name16 = name16be.iter().map(|&v| u16::from_be(v)).collect::<Vec<_>>();
+                String::from_utf16(&name16).ok().map(Cow::Owned)
+            },
+            Some(stb_truetype::PlatformEncodingLanguageID::Microsoft(Some(Ok(stb_truetype::MicrosoftEID::UnicodeFull)), _)) => {
+                let name16be = unsafe { ::std::slice::from_raw_parts(name.as_ptr() as *const u16, name.len() / 2) };
+                let name16 = name16be.iter().map(|&v| u16::from_be(v)).collect::<Vec<_>>();
+                String::from_utf16(&name16).ok().map(Cow::Owned)
+            },
+            Some(_) => Some(Cow::Borrowed("(Unknown encoding)")),
+            None => Some(Cow::Borrowed("(Unknown Platform ID)")),
+        }).unwrap_or(Cow::Borrowed("(Encoding error)"));
+        println!("{:?}, {:?}, {:?}", name, pl_en_la, na);
     }
 }

@@ -154,9 +154,9 @@ fn mac_eid(v: u16) -> Option<MacEID> {
     }
 }
 
-/*
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
+pub enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
        // problematic because there are e.g. 16 english LCIDs and 16 arabic LCIDs
    English     =0x0409,   Italian     =0x0410,
    Chinese     =0x0804,   Japanese    =0x0411,
@@ -165,9 +165,27 @@ enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
    German      =0x0407,   //Spanish     =0x0409,
    Hebrew      =0x040d,   Swedish     =0x041D
 }
+fn microsoft_lang(v: u16) -> Option<MicrosoftLang> {
+    use MicrosoftLang::*;
+    match v {
+        0x0409 => Some(English),
+        0x0804 => Some(Chinese),
+        0x0413 => Some(Dutch),
+        0x040c => Some(French),
+        0x0407 => Some(German),
+        0x040d => Some(Hebrew),
+        0x0410 => Some(Italian),
+        0x0411 => Some(Japanese),
+        0x0412 => Some(Korean),
+        0x0419 => Some(Russian),
+        0x041D => Some(Swedish),
+        _ => None,
+    }
+}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-enum MacLang { // languageID for PLATFORM_ID_MAC
+pub enum MacLang { // languageID for PLATFORM_ID_MAC
    English      =0 ,   Japanese     =11,
    Arabic       =12,   Korean       =23,
    Dutch        =4 ,   Russian      =32,
@@ -176,21 +194,48 @@ enum MacLang { // languageID for PLATFORM_ID_MAC
    Hebrew       =10,   ChineseSimplified =33,
    Italian      =3 ,   ChineseTrad =19
 }
- */
+fn mac_lang(v: u16) -> Option<MacLang> {
+    use MacLang::*;
+    match v {
+        0 => Some(English),
+        12 => Some(Arabic),
+        4 => Some(Dutch),
+        1 => Some(French),
+        2 => Some(German),
+        10 => Some(Hebrew),
+        3 => Some(Italian),
+        11 => Some(Japanese),
+        23 => Some(Korean),
+        32 => Some(Russian),
+        6 => Some(Spanish),
+        5 => Some(Swedish),
+        33 => Some(ChineseSimplified),
+        19 => Some(ChineseTrad),
+        _ => None,
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PlatformEncodingID {
-    Unicode(Result<UnicodeEID, u16>),
-    Mac(Result<MacEID, u16>),
-    ISO(u16),
-    Microsoft(Result<MicrosoftEID, u16>),
+pub enum PlatformEncodingLanguageID {
+    Unicode(Option<Result<UnicodeEID, u16>>, Option<u16>),
+    Mac(Option<Result<MacEID, u16>>, Option<Result<MacLang, u16>>),
+    ISO(Option<u16>, Option<u16>),
+    Microsoft(Option<Result<MicrosoftEID, u16>>, Option<Result<MicrosoftLang, u16>>),
 }
-fn platform_encoding_id(platform_id: PlatformID, encoding_id: u16) -> PlatformEncodingID {
+fn platform_encoding_id(platform_id: PlatformID, encoding_id: Option<u16>, language_id: Option<u16>) -> PlatformEncodingLanguageID {
     match platform_id {
-        PlatformID::Unicode => PlatformEncodingID::Unicode(unicode_eid(encoding_id).ok_or(encoding_id)),
-        PlatformID::Mac => PlatformEncodingID::Mac(mac_eid(encoding_id).ok_or(encoding_id)),
-        PlatformID::ISO => PlatformEncodingID::ISO(encoding_id),
-        PlatformID::Microsoft => PlatformEncodingID::Microsoft(microsoft_eid(encoding_id).ok_or(encoding_id)),
+        PlatformID::Unicode => PlatformEncodingLanguageID::Unicode(
+            encoding_id.map(|id| unicode_eid(id).ok_or(id)),
+            language_id),
+        PlatformID::Mac => PlatformEncodingLanguageID::Mac(
+            encoding_id.map(|id| mac_eid(id).ok_or(id)),
+            language_id.map(|id| mac_lang(id).ok_or(id))),
+        PlatformID::ISO => PlatformEncodingLanguageID::ISO(
+            encoding_id,
+            language_id),
+        PlatformID::Microsoft => PlatformEncodingLanguageID::Microsoft(
+            encoding_id.map(|id| microsoft_eid(id).ok_or(id)),
+            language_id.map(|id| microsoft_lang(id).ok_or(id))),
     }
 }
 
@@ -993,7 +1038,7 @@ pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
 }
 
 impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
-    type Item = (&'a [u8], Option<PlatformEncodingID>, u16, u16);
+    type Item = (&'a [u8], Option<PlatformEncodingLanguageID>, u16);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.count {
@@ -1002,19 +1047,21 @@ impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
 
         let loc = self.font_info.name as usize + 6 + 12 * self.index;
 
-        let platform_encoding_id = platform_id(BE::read_u16(&self.font_info.data[loc + 0..]))
-            .map(|p_id| {
+        let pl_id = platform_id(BE::read_u16(&self.font_info.data[loc + 0..]));
+        let platform_encoding_language_id = pl_id.map(|pl_id| {
                 let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
-                platform_encoding_id(p_id, encoding_id)
+                let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
+                platform_encoding_id(pl_id, Some(encoding_id), Some(language_id))
             });
-        let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
+        // @TODO: Define an enum type for Name ID.
+        //        See https://www.microsoft.com/typography/otspec/name.htm, "Name IDs" section.
         let name_id = BE::read_u16(&self.font_info.data[loc + 6..]);
         let length = BE::read_u16(&self.font_info.data[loc + 8..]) as usize;
         let offset = self.string_offset + BE::read_u16(&self.font_info.data[loc + 10..]) as usize;
 
         self.index += 1;
 
-        Some((&self.font_info.data[offset..offset+length], platform_encoding_id, language_id, name_id))
+        Some((&self.font_info.data[offset..offset+length], platform_encoding_language_id, name_id))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
