@@ -12,6 +12,7 @@ pub struct FontInfo<Data: Deref<Target=[u8]>> {
     glyf: u32,
     hhea: u32,
     hmtx: u32,
+    name: u32,
     kern: u32,            // table locations as offset from start of .ttf
     index_map: u32,       // a cmap mapping for our chosen character encoding
     index_to_loc_format: u32 // format needed to map from glyph index to glyph
@@ -207,6 +208,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         let glyf = find_table(&data, fontstart, b"glyf"); // required
         let hhea = find_table(&data, fontstart, b"hhea"); // required
         let hmtx = find_table(&data, fontstart, b"hmtx"); // required
+        let name = find_table(&data, fontstart, b"name"); // not required
         let kern = find_table(&data, fontstart, b"kern"); // not required
         if cmap == 0 || loca == 0 || head == 0 || glyf == 0 || hhea == 0 || hmtx == 0 {
             return None;
@@ -256,6 +258,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             glyf: glyf,
             hhea: hhea,
             hmtx: hmtx,
+            name: name,
             kern: kern,
             num_glyphs: num_glyphs as u32,
             index_map: index_map,
@@ -912,7 +915,88 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         self.get_codepoint_bitmap_box_subpixel(codepoint, scale_x, scale_y, 0.0, 0.0)
     }
 
+    pub fn get_font_name_strings(&self) -> FontNameIter<Data> {
+        let nm = self.name as usize;
+        if nm == 0 {
+            return FontNameIter {
+                font_info: &self,
+                string_offset: 0,
+                index: 0,
+                count: 0,
+            };
+        }
+        let count = BE::read_u16(&self.data[nm + 2..]) as usize;
+        let string_offset = nm + BE::read_u16(&self.data[nm + 4..]) as usize;
+
+        FontNameIter {
+            font_info: &self,
+            string_offset: string_offset,
+            index: 0,
+            count: count,
+        }
+    }
+
 }
+
+pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
+    /// Font info.
+    font_info: &'a FontInfo<Data>,
+    string_offset: usize,
+    /// Next index.
+    index: usize,
+    /// Number of name strings.
+    count: usize,
+}
+
+impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
+    type Item = (&'a [u8], u16, u16, u16, u16);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.count {
+            return None;
+        }
+
+        let loc = self.font_info.name as usize + 6 + 12 * self.index;
+
+        let platform_id = BE::read_u16(&self.font_info.data[loc + 0..]);
+        let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
+        let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
+        let name_id = BE::read_u16(&self.font_info.data[loc + 6..]);
+        let length = BE::read_u16(&self.font_info.data[loc + 8..]) as usize;
+        let offset = self.string_offset + BE::read_u16(&self.font_info.data[loc + 10..]) as usize;
+
+        self.index += 1;
+
+        Some((&self.font_info.data[offset..offset+length], platform_id, encoding_id, language_id, name_id))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.count - self.index;
+        (remaining, Some(remaining))
+    }
+
+    fn count(self) -> usize {
+        self.count - self.index
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        if self.index >= self.count || self.count == 0 {
+            return None;
+        }
+        self.index = self.count - 1;
+        self.next()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if n > self.count - self.index {
+            self.index = self.count;
+            return None;
+        }
+        self.index += n;
+        self.next()
+    }
+}
+
 // The following code is an unfinished port of the rasteriser in stb_truetype.h
 /*
 struct Edge {
