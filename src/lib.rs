@@ -791,7 +791,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         }
 
         let mut l: i32 = 0;
-        let mut r: i32 = (BE::read_u16(&kern[10..]) - 1) as i32;
+        let mut r: i32 = BE::read_u16(&kern[10..]) as i32 - 1;
         let needle = glyph_1 << 16 | glyph_2;
         while l <= r {
             let m = (l + r) >> 1;
