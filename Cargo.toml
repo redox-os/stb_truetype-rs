@@ -1,6 +1,6 @@
 [package]
 name = "stb_truetype"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Dylan Ede <dylanede@googlemail.com>"]
 description = "A straight translation of the font loading code in stb_truetype.h from C to Rust."
 documentation = "https://dylanede.github.io/stb_truetype-rs"
