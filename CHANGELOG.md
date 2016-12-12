@@ -1,3 +1,7 @@
+##0.2.1
+
+Fix `attempt to subtract with overflow` error in get_glyph_kern_advance
+
 #0.2.0
 
 `FontInfo` is now generic in the storage for the font data, allowing flexible
