@@ -385,24 +385,16 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
     }
 
     fn get_glyf_offset(&self, glyph_index: u32) -> Option<u32> {
-        let g1;
-        let g2;
+
         if glyph_index >= self.num_glyphs || self.index_to_loc_format >= 2 {
             // glyph index out of range or unknown index->glyph map format
             return None;
         }
 
         if self.index_to_loc_format == 0 {
-            g1 = self.glyf + BE::read_u16(&self.data[(self.loca + glyph_index*2) as usize..]) as u32 * 2;
-            g2 = self.glyf + BE::read_u16(&self.data[(self.loca + glyph_index*2 + 2) as usize..]) as u32 * 2;
+            Some(self.glyf + BE::read_u16(&self.data[(self.loca + glyph_index*2) as usize..]) as u32 * 2)
         } else {
-            g1 = self.glyf + BE::read_u32(&self.data[(self.loca + glyph_index * 4) as usize..]);
-            g2 = self.glyf + BE::read_u32(&self.data[(self.loca + glyph_index * 4 + 4) as usize..]);
-        }
-        if g1 == g2 {
-            None
-        } else {
-            Some(g1)
+            Some(self.glyf + BE::read_u32(&self.data[(self.loca + glyph_index * 4) as usize..]))
         }
     }
 
@@ -533,9 +525,6 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             let mut x = 0i32;
             for i in 0..n {
                 let flags = vertices[off + i].type_;
-                if flags == 255 {
-                    println!("{:?}", flags);
-                }
                 if flags & 2 != 0 {
                     let dx = points[0] as i32;
                     points = &points[1..];
