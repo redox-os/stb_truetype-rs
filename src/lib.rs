@@ -12,6 +12,7 @@ pub struct FontInfo<Data: Deref<Target=[u8]>> {
     glyf: u32,
     hhea: u32,
     hmtx: u32,
+    name: u32,
     kern: u32,            // table locations as offset from start of .ttf
     index_map: u32,       // a cmap mapping for our chosen character encoding
     index_to_loc_format: u32 // format needed to map from glyph index to glyph
@@ -71,43 +72,57 @@ pub struct VMetrics {
     pub line_gap: i32
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum PlatformID { // platformID
+pub enum PlatformId { // platformID
    Unicode   = 0,
    Mac       = 1,
-   ISO       = 2,
+   Iso       = 2,
    Microsoft = 3
 }
-fn platform_id(v: u16) -> Option<PlatformID> {
-    use PlatformID::*;
+fn platform_id(v: u16) -> Option<PlatformId> {
+    use PlatformId::*;
     match v {
         0 => Some(Unicode),
         1 => Some(Mac),
-        2 => Some(ISO),
+        2 => Some(Iso),
         3 => Some(Microsoft),
         _ => None
     }
 }
 
-/*
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum UnicodeEID { // encodingID for PLATFORM_ID_UNICODE
+#[allow(non_camel_case_types)]
+pub enum UnicodeEid { // encodingID for PLATFORM_ID_UNICODE
    Unicode_1_0       = 0,
    Unicode_1_1       = 1,
-   ISO_10646         = 2,
-   Unicode_2_0_BMP   = 3,
+   Iso_10646         = 2,
+   Unicode_2_0_Bmp   = 3,
    Unicode_2_0_Full = 4
-}*/
+}
+fn unicode_eid(v: u16) -> Option<UnicodeEid> {
+    use UnicodeEid::*;
+    match v {
+        0 => Some(Unicode_1_0),
+        1 => Some(Unicode_1_1),
+        2 => Some(Iso_10646),
+        3 => Some(Unicode_2_0_Bmp),
+        4 => Some(Unicode_2_0_Full),
+        _ => None,
+    }
+}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum MicrosoftEID { // encodingID for PLATFORM_ID_MICROSOFT
+pub enum MicrosoftEid { // encodingID for PLATFORM_ID_MICROSOFT
    Symbol        =0,
    UnicodeBMP    =1,
    Shiftjis      =2,
    UnicodeFull   =10
 }
-fn microsoft_eid(v: u16) -> Option<MicrosoftEID> {
-    use MicrosoftEID::*;
+fn microsoft_eid(v: u16) -> Option<MicrosoftEid> {
+    use MicrosoftEid::*;
     match v {
         0 => Some(Symbol),
         1 => Some(UnicodeBMP),
@@ -117,17 +132,32 @@ fn microsoft_eid(v: u16) -> Option<MicrosoftEID> {
     }
 }
 
-/*
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum MacEID { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
+pub enum MacEid { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
    Roman        =0,   Arabic       =4,
    Japanese     =1,   Hebrew       =5,
    ChineseTrad  =2,   Greek        =6,
    Korean       =3,   Russian      =7
 }
+fn mac_eid(v: u16) -> Option<MacEid> {
+    use MacEid::*;
+    match v {
+        0 => Some(Roman),
+        1 => Some(Japanese),
+        2 => Some(ChineseTrad),
+        3 => Some(Korean),
+        4 => Some(Arabic),
+        5 => Some(Hebrew),
+        6 => Some(Greek),
+        7 => Some(Russian),
+        _ => None
+    }
+}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
+pub enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
        // problematic because there are e.g. 16 english LCIDs and 16 arabic LCIDs
    English     =0x0409,   Italian     =0x0410,
    Chinese     =0x0804,   Japanese    =0x0411,
@@ -136,9 +166,27 @@ enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
    German      =0x0407,   //Spanish     =0x0409,
    Hebrew      =0x040d,   Swedish     =0x041D
 }
+fn microsoft_lang(v: u16) -> Option<MicrosoftLang> {
+    use MicrosoftLang::*;
+    match v {
+        0x0409 => Some(English),
+        0x0804 => Some(Chinese),
+        0x0413 => Some(Dutch),
+        0x040c => Some(French),
+        0x0407 => Some(German),
+        0x040d => Some(Hebrew),
+        0x0410 => Some(Italian),
+        0x0411 => Some(Japanese),
+        0x0412 => Some(Korean),
+        0x0419 => Some(Russian),
+        0x041D => Some(Swedish),
+        _ => None,
+    }
+}
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
-enum MacLang { // languageID for PLATFORM_ID_MAC
+pub enum MacLang { // languageID for PLATFORM_ID_MAC
    English      =0 ,   Japanese     =11,
    Arabic       =12,   Korean       =23,
    Dutch        =4 ,   Russian      =32,
@@ -147,7 +195,50 @@ enum MacLang { // languageID for PLATFORM_ID_MAC
    Hebrew       =10,   ChineseSimplified =33,
    Italian      =3 ,   ChineseTrad =19
 }
- */
+fn mac_lang(v: u16) -> Option<MacLang> {
+    use MacLang::*;
+    match v {
+        0 => Some(English),
+        12 => Some(Arabic),
+        4 => Some(Dutch),
+        1 => Some(French),
+        2 => Some(German),
+        10 => Some(Hebrew),
+        3 => Some(Italian),
+        11 => Some(Japanese),
+        23 => Some(Korean),
+        32 => Some(Russian),
+        6 => Some(Spanish),
+        5 => Some(Swedish),
+        33 => Some(ChineseSimplified),
+        19 => Some(ChineseTrad),
+        _ => None,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum PlatformEncodingLanguageId {
+    Unicode(Option<Result<UnicodeEid, u16>>, Option<u16>),
+    Mac(Option<Result<MacEid, u16>>, Option<Result<MacLang, u16>>),
+    Iso(Option<u16>, Option<u16>),
+    Microsoft(Option<Result<MicrosoftEid, u16>>, Option<Result<MicrosoftLang, u16>>),
+}
+fn platform_encoding_id(platform_id: PlatformId, encoding_id: Option<u16>, language_id: Option<u16>) -> PlatformEncodingLanguageId {
+    match platform_id {
+        PlatformId::Unicode => PlatformEncodingLanguageId::Unicode(
+            encoding_id.map(|id| unicode_eid(id).ok_or(id)),
+            language_id),
+        PlatformId::Mac => PlatformEncodingLanguageId::Mac(
+            encoding_id.map(|id| mac_eid(id).ok_or(id)),
+            language_id.map(|id| mac_lang(id).ok_or(id))),
+        PlatformId::Iso => PlatformEncodingLanguageId::Iso(
+            encoding_id,
+            language_id),
+        PlatformId::Microsoft => PlatformEncodingLanguageId::Microsoft(
+            encoding_id.map(|id| microsoft_eid(id).ok_or(id)),
+            language_id.map(|id| microsoft_lang(id).ok_or(id))),
+    }
+}
 
 // # accessors to parse data from file
 
@@ -207,6 +298,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         let glyf = find_table(&data, fontstart, b"glyf"); // required
         let hhea = find_table(&data, fontstart, b"hhea"); // required
         let hmtx = find_table(&data, fontstart, b"hmtx"); // required
+        let name = find_table(&data, fontstart, b"name"); // not required
         let kern = find_table(&data, fontstart, b"kern"); // not required
         if cmap == 0 || loca == 0 || head == 0 || glyf == 0 || hhea == 0 || hmtx == 0 {
             return None;
@@ -227,16 +319,16 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             let encoding_record = (cmap + 4 + 8*(i as u32)) as usize;
             // find an encoding we understand:
             match platform_id(BE::read_u16(&data[encoding_record..])) {
-                Some(PlatformID::Microsoft) => {
+                Some(PlatformId::Microsoft) => {
                     match microsoft_eid(BE::read_u16(&data[encoding_record+2..])) {
-                        Some(MicrosoftEID::UnicodeBMP) | Some(MicrosoftEID::UnicodeFull) => {
+                        Some(MicrosoftEid::UnicodeBMP) | Some(MicrosoftEid::UnicodeFull) => {
                             // MS/Unicode
                             index_map = cmap + BE::read_u32(&data[encoding_record + 4..]);
                         }
                         _ => ()
                     }
                 }
-                Some(PlatformID::Unicode) => {
+                Some(PlatformId::Unicode) => {
                     // Mac/iOS has these
                     // all the encodingIDs are unicode, so we don't bother to check it
                     index_map = cmap + BE::read_u32(&data[encoding_record + 4..]);
@@ -256,6 +348,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             glyf: glyf,
             hhea: hhea,
             hmtx: hmtx,
+            name: name,
             kern: kern,
             num_glyphs: num_glyphs as u32,
             index_map: index_map,
@@ -912,7 +1005,94 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         self.get_codepoint_bitmap_box_subpixel(codepoint, scale_x, scale_y, 0.0, 0.0)
     }
 
+    pub fn get_font_name_strings(&self) -> FontNameIter<Data> {
+        let nm = self.name as usize;
+        if nm == 0 {
+            return FontNameIter {
+                font_info: &self,
+                string_offset: 0,
+                index: 0,
+                count: 0,
+            };
+        }
+        let count = BE::read_u16(&self.data[nm + 2..]) as usize;
+        let string_offset = nm + BE::read_u16(&self.data[nm + 4..]) as usize;
+
+        FontNameIter {
+            font_info: &self,
+            string_offset: string_offset,
+            index: 0,
+            count: count,
+        }
+    }
+
 }
+
+#[derive(Clone, Copy)]
+pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
+    /// Font info.
+    font_info: &'a FontInfo<Data>,
+    string_offset: usize,
+    /// Next index.
+    index: usize,
+    /// Number of name strings.
+    count: usize,
+}
+
+impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
+    type Item = (&'a [u8], Option<PlatformEncodingLanguageId>, u16);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.count {
+            return None;
+        }
+
+        let loc = self.font_info.name as usize + 6 + 12 * self.index;
+
+        let pl_id = platform_id(BE::read_u16(&self.font_info.data[loc + 0..]));
+        let platform_encoding_language_id = pl_id.map(|pl_id| {
+                let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
+                let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
+                platform_encoding_id(pl_id, Some(encoding_id), Some(language_id))
+            });
+        // @TODO: Define an enum type for Name ID.
+        //        See https://www.microsoft.com/typography/otspec/name.htm, "Name IDs" section.
+        let name_id = BE::read_u16(&self.font_info.data[loc + 6..]);
+        let length = BE::read_u16(&self.font_info.data[loc + 8..]) as usize;
+        let offset = self.string_offset + BE::read_u16(&self.font_info.data[loc + 10..]) as usize;
+
+        self.index += 1;
+
+        Some((&self.font_info.data[offset..offset+length], platform_encoding_language_id, name_id))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.count - self.index;
+        (remaining, Some(remaining))
+    }
+
+    fn count(self) -> usize {
+        self.count - self.index
+    }
+
+    fn last(mut self) -> Option<Self::Item> {
+        if self.index >= self.count || self.count == 0 {
+            return None;
+        }
+        self.index = self.count - 1;
+        self.next()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if n > self.count - self.index {
+            self.index = self.count;
+            return None;
+        }
+        self.index += n;
+        self.next()
+    }
+}
+
 // The following code is an unfinished port of the rasteriser in stb_truetype.h
 /*
 struct Edge {
