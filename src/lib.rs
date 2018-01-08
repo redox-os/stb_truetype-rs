@@ -72,7 +72,7 @@ pub struct VMetrics {
     pub line_gap: i32
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum PlatformId { // platformID
    Unicode   = 0,
@@ -91,7 +91,7 @@ fn platform_id(v: u16) -> Option<PlatformId> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 #[allow(non_camel_case_types)]
 pub enum UnicodeEid { // encodingID for PLATFORM_ID_UNICODE
@@ -113,7 +113,7 @@ fn unicode_eid(v: u16) -> Option<UnicodeEid> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum MicrosoftEid { // encodingID for PLATFORM_ID_MICROSOFT
    Symbol        =0,
@@ -132,7 +132,7 @@ fn microsoft_eid(v: u16) -> Option<MicrosoftEid> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum MacEid { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
    Roman        =0,   Arabic       =4,
@@ -155,7 +155,7 @@ fn mac_eid(v: u16) -> Option<MacEid> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum MicrosoftLang { // languageID for PLATFORM_ID_MICROSOFT; same as LCID...
        // problematic because there are e.g. 16 english LCIDs and 16 arabic LCIDs
@@ -184,7 +184,7 @@ fn microsoft_lang(v: u16) -> Option<MicrosoftLang> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub enum MacLang { // languageID for PLATFORM_ID_MAC
    English      =0 ,   Japanese     =11,
@@ -216,7 +216,7 @@ fn mac_lang(v: u16) -> Option<MacLang> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PlatformEncodingLanguageId {
     Unicode(Option<Result<UnicodeEid, u16>>, Option<u16>),
     Mac(Option<Result<MacEid, u16>>, Option<Result<MacLang, u16>>),
@@ -1028,6 +1028,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
 
 }
 
+#[derive(Clone, Copy)]
 pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
     /// Font info.
     font_info: &'a FontInfo<Data>,
