@@ -93,6 +93,7 @@ fn platform_id(v: u16) -> Option<PlatformID> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
+#[allow(non_camel_case_types)]
 pub enum UnicodeEID { // encodingID for PLATFORM_ID_UNICODE
    Unicode_1_0       = 0,
    Unicode_1_1       = 1,
