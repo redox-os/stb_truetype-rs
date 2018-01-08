@@ -74,18 +74,18 @@ pub struct VMetrics {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub enum PlatformID { // platformID
+pub enum PlatformId { // platformID
    Unicode   = 0,
    Mac       = 1,
-   ISO       = 2,
+   Iso       = 2,
    Microsoft = 3
 }
-fn platform_id(v: u16) -> Option<PlatformID> {
-    use PlatformID::*;
+fn platform_id(v: u16) -> Option<PlatformId> {
+    use PlatformId::*;
     match v {
         0 => Some(Unicode),
         1 => Some(Mac),
-        2 => Some(ISO),
+        2 => Some(Iso),
         3 => Some(Microsoft),
         _ => None
     }
@@ -94,20 +94,20 @@ fn platform_id(v: u16) -> Option<PlatformID> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 #[allow(non_camel_case_types)]
-pub enum UnicodeEID { // encodingID for PLATFORM_ID_UNICODE
+pub enum UnicodeEid { // encodingID for PLATFORM_ID_UNICODE
    Unicode_1_0       = 0,
    Unicode_1_1       = 1,
-   ISO_10646         = 2,
-   Unicode_2_0_BMP   = 3,
+   Iso_10646         = 2,
+   Unicode_2_0_Bmp   = 3,
    Unicode_2_0_Full = 4
 }
-fn unicode_eid(v: u16) -> Option<UnicodeEID> {
-    use UnicodeEID::*;
+fn unicode_eid(v: u16) -> Option<UnicodeEid> {
+    use UnicodeEid::*;
     match v {
         0 => Some(Unicode_1_0),
         1 => Some(Unicode_1_1),
-        2 => Some(ISO_10646),
-        3 => Some(Unicode_2_0_BMP),
+        2 => Some(Iso_10646),
+        3 => Some(Unicode_2_0_Bmp),
         4 => Some(Unicode_2_0_Full),
         _ => None,
     }
@@ -115,14 +115,14 @@ fn unicode_eid(v: u16) -> Option<UnicodeEID> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub enum MicrosoftEID { // encodingID for PLATFORM_ID_MICROSOFT
+pub enum MicrosoftEid { // encodingID for PLATFORM_ID_MICROSOFT
    Symbol        =0,
    UnicodeBMP    =1,
    Shiftjis      =2,
    UnicodeFull   =10
 }
-fn microsoft_eid(v: u16) -> Option<MicrosoftEID> {
-    use MicrosoftEID::*;
+fn microsoft_eid(v: u16) -> Option<MicrosoftEid> {
+    use MicrosoftEid::*;
     match v {
         0 => Some(Symbol),
         1 => Some(UnicodeBMP),
@@ -134,14 +134,14 @@ fn microsoft_eid(v: u16) -> Option<MicrosoftEID> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub enum MacEID { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
+pub enum MacEid { // encodingID for PLATFORM_ID_MAC; same as Script Manager codes
    Roman        =0,   Arabic       =4,
    Japanese     =1,   Hebrew       =5,
    ChineseTrad  =2,   Greek        =6,
    Korean       =3,   Russian      =7
 }
-fn mac_eid(v: u16) -> Option<MacEID> {
-    use MacEID::*;
+fn mac_eid(v: u16) -> Option<MacEid> {
+    use MacEid::*;
     match v {
         0 => Some(Roman),
         1 => Some(Japanese),
@@ -217,24 +217,24 @@ fn mac_lang(v: u16) -> Option<MacLang> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PlatformEncodingLanguageID {
-    Unicode(Option<Result<UnicodeEID, u16>>, Option<u16>),
-    Mac(Option<Result<MacEID, u16>>, Option<Result<MacLang, u16>>),
-    ISO(Option<u16>, Option<u16>),
-    Microsoft(Option<Result<MicrosoftEID, u16>>, Option<Result<MicrosoftLang, u16>>),
+pub enum PlatformEncodingLanguageId {
+    Unicode(Option<Result<UnicodeEid, u16>>, Option<u16>),
+    Mac(Option<Result<MacEid, u16>>, Option<Result<MacLang, u16>>),
+    Iso(Option<u16>, Option<u16>),
+    Microsoft(Option<Result<MicrosoftEid, u16>>, Option<Result<MicrosoftLang, u16>>),
 }
-fn platform_encoding_id(platform_id: PlatformID, encoding_id: Option<u16>, language_id: Option<u16>) -> PlatformEncodingLanguageID {
+fn platform_encoding_id(platform_id: PlatformId, encoding_id: Option<u16>, language_id: Option<u16>) -> PlatformEncodingLanguageId {
     match platform_id {
-        PlatformID::Unicode => PlatformEncodingLanguageID::Unicode(
+        PlatformId::Unicode => PlatformEncodingLanguageId::Unicode(
             encoding_id.map(|id| unicode_eid(id).ok_or(id)),
             language_id),
-        PlatformID::Mac => PlatformEncodingLanguageID::Mac(
+        PlatformId::Mac => PlatformEncodingLanguageId::Mac(
             encoding_id.map(|id| mac_eid(id).ok_or(id)),
             language_id.map(|id| mac_lang(id).ok_or(id))),
-        PlatformID::ISO => PlatformEncodingLanguageID::ISO(
+        PlatformId::Iso => PlatformEncodingLanguageId::Iso(
             encoding_id,
             language_id),
-        PlatformID::Microsoft => PlatformEncodingLanguageID::Microsoft(
+        PlatformId::Microsoft => PlatformEncodingLanguageId::Microsoft(
             encoding_id.map(|id| microsoft_eid(id).ok_or(id)),
             language_id.map(|id| microsoft_lang(id).ok_or(id))),
     }
@@ -319,16 +319,16 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             let encoding_record = (cmap + 4 + 8*(i as u32)) as usize;
             // find an encoding we understand:
             match platform_id(BE::read_u16(&data[encoding_record..])) {
-                Some(PlatformID::Microsoft) => {
+                Some(PlatformId::Microsoft) => {
                     match microsoft_eid(BE::read_u16(&data[encoding_record+2..])) {
-                        Some(MicrosoftEID::UnicodeBMP) | Some(MicrosoftEID::UnicodeFull) => {
+                        Some(MicrosoftEid::UnicodeBMP) | Some(MicrosoftEid::UnicodeFull) => {
                             // MS/Unicode
                             index_map = cmap + BE::read_u32(&data[encoding_record + 4..]);
                         }
                         _ => ()
                     }
                 }
-                Some(PlatformID::Unicode) => {
+                Some(PlatformId::Unicode) => {
                     // Mac/iOS has these
                     // all the encodingIDs are unicode, so we don't bother to check it
                     index_map = cmap + BE::read_u32(&data[encoding_record + 4..]);
@@ -1039,7 +1039,7 @@ pub struct FontNameIter<'a, Data: 'a + Deref<Target=[u8]>> {
 }
 
 impl<'a, Data: 'a + Deref<Target=[u8]>> Iterator for FontNameIter<'a, Data> {
-    type Item = (&'a [u8], Option<PlatformEncodingLanguageID>, u16);
+    type Item = (&'a [u8], Option<PlatformEncodingLanguageId>, u16);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.count {
