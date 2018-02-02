@@ -2,7 +2,7 @@ extern crate byteorder;
 use byteorder::ByteOrder;
 use byteorder::BigEndian as BE;
 use ::std::ops::Deref;
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FontInfo<Data: Deref<Target=[u8]>> {
     data: Data,       // pointer to .ttf file
     // fontstart: usize,       // offset of start of font
