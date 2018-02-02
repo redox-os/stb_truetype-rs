@@ -246,8 +246,12 @@ fn platform_encoding_id(platform_id: PlatformId, encoding_id: Option<u16>, langu
 // truetype fonts that aren't padded to alignment, define ALLOW_UNALIGNED_TRUETYPE
 
 pub fn is_font(font: &[u8]) -> bool {
-    let tag = &font[0..4];
-    tag == [b'1', 0, 0, 0] || tag == b"typ1" || tag == b"OTTO" || tag == [0, 1, 0, 0]
+    if font.len() >= 4 {
+        let tag = &font[0..4];
+        tag == [b'1', 0, 0, 0] || tag == b"typ1" || tag == b"OTTO" || tag == [0, 1, 0, 0]
+    } else {
+        false
+    }
 }
 
 fn find_table(data: &[u8], fontstart: usize, tag: &[u8]) -> u32 {
