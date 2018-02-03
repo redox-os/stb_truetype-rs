@@ -1,6 +1,8 @@
 # stb_truetype-rs
 
-[![Build Status](https://travis-ci.org/dylanede/stb_truetype-rs.svg?branch=master)](https://travis-ci.org/dylanede/stb_truetype-rs) [![Crates.io](https://img.shields.io/crates/v/stb_truetype.svg)](https://crates.io/crates/stb_truetype) [![docs.rs](https://docs.rs/stb_truetype/badge.svg)](https://docs.rs/stb_truetype/)
+[![Build Status](https://travis-ci.org/redox-os/stb_truetype-rs.svg?branch=master)](https://travis-ci.org/redox-os/stb_truetype-rs)
+[![Crates.io](https://img.shields.io/crates/v/stb_truetype.svg)](https://crates.io/crates/stb_truetype)
+[![docs.rs](https://docs.rs/stb_truetype/badge.svg)](https://docs.rs/stb_truetype/)
 
 
 This is a straight translation of the font loading code in
