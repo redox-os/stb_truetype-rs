@@ -958,12 +958,16 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
         height / fheight
     }
 
+    /// Returns the units per EM square of this font.
+    pub fn units_per_em(&self) -> u16 {
+        BE::read_u16(&self.data[self.head as usize + 18..])
+    }
+
     /// computes a scale factor to produce a font whose EM size is mapped to
     /// `pixels` tall. This is probably what traditional APIs compute, but
     /// I'm not positive.
     pub fn scale_for_mapping_em_to_pixels(&self, pixels: f32) -> f32 {
-        let units_per_em = BE::read_u16(&self.data[self.head as usize + 18..]) as f32;
-        pixels / units_per_em
+        pixels / (self.units_per_em() as f32)
     }
 
     /// like `get_codepoint_bitmap_box_subpixel`, but takes a glyph index instead of a codepoint.
