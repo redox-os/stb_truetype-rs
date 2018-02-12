@@ -15,7 +15,7 @@ If you want to use this crate directly, add the following to your Cargo.toml:
 
 ```toml
 [dependencies]
-stb_truetype = "0.2.1"
+stb_truetype = "0.2.2"
 ```
 
 Please note that the documentation provided is also a straight copy from the

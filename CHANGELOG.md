@@ -1,3 +1,7 @@
+##0.2.2
+
+Merge a number of bugfixes, update documentation links, add new debugging features
+
 ##0.2.1
 
 Fix `attempt to subtract with overflow` error in get_glyph_kern_advance
