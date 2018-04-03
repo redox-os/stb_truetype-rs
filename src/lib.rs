@@ -291,6 +291,26 @@ pub fn get_font_offset_for_index(font_collection: &[u8], index: i32) -> Option<u
    return None;
 }
 
+pub struct CodepointIter {
+    ranges: Vec<(u32, u32)>,
+    cur_range: u32,
+    cur_point: u32,
+}
+
+impl Iterator for CodepointIter {
+    type Item = u32;
+    fn next(&mut self) -> Option<u32> {
+        if self.cur_range >= self.ranges.len() as u32 { return None; }
+        if self.cur_point >= self.ranges[self.cur_range as usize].1 {
+            self.cur_range += 1;
+            if self.cur_range >= self.ranges.len() as u32 { return None; }
+            self.cur_point = self.ranges[self.cur_range as usize].0;
+        }
+        self.cur_point += 1;
+        Some(self.cur_point as u32 - 1)
+    }
+}
+
 impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
 
     /// Given an offset into the file that defines a font, this function builds
@@ -362,6 +382,47 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
 
     pub fn get_num_glyphs(&self) -> u32 {
         self.num_glyphs
+    }
+
+    pub fn codepoint_iter(&self) -> CodepointIter {
+        let mut iter = CodepointIter {
+            ranges: vec![],
+            cur_range: 0,
+            cur_point: 0,
+        };
+
+        let data = &self.data;
+        let index_map = &data[self.index_map as usize..];
+        let format = BE::read_u16(index_map);
+        match format {
+            0 => {
+                let bytes = BE::read_u16(&index_map[2..]);
+                iter.ranges.push((0, bytes as u32 - 6));
+            },
+            6 => {
+                let first = BE::read_u16(&index_map[6..]) as u32;
+                let count = BE::read_u16(&index_map[8..]) as u32;
+                iter.ranges.push((first, first + count));
+            },
+            2 =>  panic!("Index map format unsupported for codepoint iter: 2"),
+            4 => {
+                let segcount: usize = BE::read_u16(&index_map[6..]) as usize >> 1;
+                let endarray: usize = 14;
+                let startarray: usize = endarray + segcount*2 + 2;
+                for seg in 0..segcount {
+                    let end = BE::read_u16(&index_map[endarray + 2*seg..]);
+                    let start = BE::read_u16(&index_map[startarray + 2*seg..]);
+                    if start==0xFFFF || end==0xFFFF { break; }
+                    iter.ranges.push((start as u32, end as u32 + 1));
+                }
+            },
+            12 | 13 => {
+                panic!("Index map format unsupported for codepoint iter: {}", format);
+            },
+            n => panic!("Index map format unsupported for codepoint iter: {}", n)
+        }
+
+        iter
     }
 
     /// If you're going to perform multiple operations on the same character

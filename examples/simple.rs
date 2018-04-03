@@ -21,4 +21,8 @@ fn main() {
     println!("{:?}", advance);
     let scale = font.scale_for_pixel_height(20.0);
     println!("{:?}", scale);
+    print!("Codepoints: ");
+    for cp in font.codepoint_iter() {
+        print!("{:X},",cp);
+    }
 }
