@@ -39,11 +39,39 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn vertex_type(&self) -> VertexType {
-        unsafe{::std::mem::transmute(self.type_)}
+        match self.type_ {
+            1 => VertexType::MoveTo,
+            2 => VertexType::LineTo,
+            3 => VertexType::CurveTo,
+            type_ => panic!("Invalid vertex type: {}", type_),
+        }
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[test]
+fn test_vertex_type() {
+    fn v(type_: VertexType) -> Vertex {
+        Vertex { x: 0, y: 0, cx: 0, cy: 0, type_: type_ as u8 }
+    }
+    assert_eq!(v(VertexType::MoveTo).vertex_type(), VertexType::MoveTo);
+    assert_eq!(v(VertexType::LineTo).vertex_type(), VertexType::LineTo);
+    assert_eq!(v(VertexType::CurveTo).vertex_type(), VertexType::CurveTo);
+}
+
+#[test]
+#[should_panic]
+fn test_invalid_vertex_type() {
+    let v = Vertex { x: 0, y: 0, cx: 0, cy: 0, type_: 255 };
+    let s = match v.vertex_type() {
+        VertexType::MoveTo => "move to",
+        VertexType::LineTo => "line to",
+        VertexType::CurveTo => "curve to",
+    };
+    // With `Vertex::vertex_type` defined as `transmute` this would be undefined behavior:
+    println!("{}", s);
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum VertexType {
     MoveTo = 1,
@@ -597,8 +625,8 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             let n = 1 + BE::read_u16(&end_points_of_contours[number_of_contours*2 - 2..]) as usize;
 
             let m = n + 2 * number_of_contours; // a loose bound on how many vertices we might need
-            let mut vertices: Vec<Vertex> = Vec::with_capacity(m);
-            unsafe{ vertices.set_len(m) };
+            let dummy_vertex = Vertex { x: 0, y: 0, cx: 0, cy: 0, type_: VertexType::MoveTo as u8 };
+            let mut vertices = vec![dummy_vertex; m];
 
             let mut next_move = 0;
             let mut flagcount = 0;
@@ -765,7 +793,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             }
             close_shape(&mut vertices[..], &mut num_vertices, was_off, start_off, sx, sy, scx, scy, cx, cy);
             assert!(num_vertices <= vertices.len());
-            unsafe{vertices.set_len(num_vertices)};
+            vertices.truncate(num_vertices);
             vertices
         } else if number_of_contours == -1 {
             // Compound shapes
