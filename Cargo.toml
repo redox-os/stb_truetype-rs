@@ -8,6 +8,10 @@ repository = "https://gitlab.redox-os.org/redox-os/stb_truetype-rs"
 readme = "README.md"
 license = "MIT / Apache-2.0"
 keywords = ["font", "truetype", "opentype", "ttf", "otf"]
+exclude = ["/fonts/**"]
 
 [dependencies]
 byteorder = "1.0"
+
+[dev-dependencies]
+approx = { version = "0.3", default-features = false }
