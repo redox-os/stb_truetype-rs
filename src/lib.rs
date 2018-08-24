@@ -911,12 +911,13 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
     /// glyph index for a codepoint.
     pub fn get_glyph_h_metrics(&self, glyph_index: u32) -> HMetrics {
         let num_of_long_hor_metrics = BE::read_u16(&self.data[self.hhea as usize + 34..]) as usize;
-        if (glyph_index as usize) < num_of_long_hor_metrics {
+        let glyph_index = glyph_index as usize;
+        if glyph_index < num_of_long_hor_metrics {
+            let data = &self.data[self.hmtx as usize + 4 * glyph_index..];
+            let [advance_width, left_side_bearing] = read_ints!(2, i16, data);
             HMetrics {
-                advance_width:
-                BE::read_i16(&self.data[self.hmtx as usize + 4*glyph_index as usize..]) as i32,
-                left_side_bearing:
-                BE::read_i16(&self.data[self.hmtx as usize + 4*glyph_index as usize + 2..]) as i32,
+                advance_width: i32::from(advance_width),
+                left_side_bearing: i32::from(left_side_bearing),
             }
         } else {
             HMetrics {
