@@ -261,7 +261,7 @@ pub fn is_font(data: &[u8]) -> bool {
 /// in a single file, allowing them to share data for glyphs they have in
 /// common.
 pub fn is_collection(data: &[u8]) -> bool {
-    return data.len() >= 4 && &data[0..4] == b"ttcf";
+    data.len() >= 4 && &data[0..4] == b"ttcf"
 }
 
 fn find_table(data: &[u8], fontstart: usize, tag: &[u8]) -> u32 {
