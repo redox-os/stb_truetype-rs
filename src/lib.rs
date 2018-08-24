@@ -245,13 +245,23 @@ fn platform_encoding_id(platform_id: PlatformId, encoding_id: Option<u16>, langu
 // on platforms that don't allow misaligned reads, if we want to allow
 // truetype fonts that aren't padded to alignment, define ALLOW_UNALIGNED_TRUETYPE
 
-pub fn is_font(font: &[u8]) -> bool {
-    if font.len() >= 4 {
-        let tag = &font[0..4];
+/// Return `true` if `data` holds a font stored in a format this crate
+/// recognizes, according to its signature in the initial bytes.
+pub fn is_font(data: &[u8]) -> bool {
+    if data.len() >= 4 {
+        let tag = &data[0..4];
         tag == [b'1', 0, 0, 0] || tag == b"typ1" || tag == b"OTTO" || tag == [0, 1, 0, 0]
     } else {
         false
     }
+}
+
+/// Return `true` if `data` holds a TrueType Collection, according to its
+/// signature in the initial bytes. A TrueType Collection stores several fonts
+/// in a single file, allowing them to share data for glyphs they have in
+/// common.
+pub fn is_collection(data: &[u8]) -> bool {
+    return data.len() >= 4 && &data[0..4] == b"ttcf";
 }
 
 fn find_table(data: &[u8], fontstart: usize, tag: &[u8]) -> u32 {
@@ -278,7 +288,7 @@ pub fn get_font_offset_for_index(font_collection: &[u8], index: i32) -> Option<u
       return if index == 0 { Some(0) } else { None };
    }
    // check if it's a TTC
-   if &font_collection[0..4] == b"ttcf" {
+   if is_collection(font_collection) {
       // version 1?
       if BE::read_u32(&font_collection[4..]) == 0x00010000 || BE::read_u32(&font_collection[4..]) == 0x00020000 {
          let n = BE::read_i32(&font_collection[8..]);
