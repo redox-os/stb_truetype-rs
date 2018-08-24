@@ -1,7 +1,11 @@
+#![allow(unknown_lints)]
+
 extern crate stb_truetype;
 
 use stb_truetype::FontInfo;
 use std::borrow::Cow;
+
+#[allow(cast_ptr_alignment)] // FIXME seems a bit dodgy
 fn main() {
     let file = &include_bytes!("../fonts/Gudea-Regular.ttf")[..];
     let font = FontInfo::new(Cow::Borrowed(file), 0).unwrap();
