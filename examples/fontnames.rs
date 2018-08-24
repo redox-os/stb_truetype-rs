@@ -3,7 +3,7 @@ extern crate stb_truetype;
 use stb_truetype::FontInfo;
 use std::borrow::Cow;
 fn main() {
-    let file = &include_bytes!("Gudea-Regular.ttf")[..];
+    let file = &include_bytes!("../fonts/Gudea-Regular.ttf")[..];
     let font = FontInfo::new(Cow::Borrowed(file), 0).unwrap();
 
     for info in font.get_font_name_strings() {
