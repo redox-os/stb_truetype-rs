@@ -982,10 +982,11 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
     /// the scale factor for a given size
     pub fn get_v_metrics(&self) -> VMetrics {
         let hhea = &self.data[self.hhea as usize..];
+        let [ascent, descent, line_gap] = read_ints!(3, i16, &hhea[4..]);
         VMetrics {
-            ascent: BE::read_i16(&hhea[4..]) as i32,
-            descent: BE::read_i16(&hhea[6..]) as i32,
-            line_gap: BE::read_i16(&hhea[8..]) as i32
+            ascent: i32::from(ascent),
+            descent: i32::from(descent),
+            line_gap: i32::from(line_gap),
         }
     }
 
@@ -1008,7 +1009,10 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
     /// so if you prefer to measure height by the ascent only, use a similar calculation.
     pub fn scale_for_pixel_height(&self, height: f32) -> f32 {
         let hhea = &self.data[self.hhea as usize..];
-        let fheight = BE::read_i16(&hhea[4..]) as f32 - BE::read_i16(&hhea[6..]) as f32;
+        let fheight = {
+            let [a, b] = read_ints!(2, i16, &hhea[4..]);
+            f32::from(a) - f32::from(b)
+        };
         height / fheight
     }
 
