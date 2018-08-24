@@ -803,7 +803,7 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
             }
             close_shape(&mut vertices[..], &mut num_vertices, was_off, start_off, sx, sy, scx, scy, cx, cy);
             assert!(num_vertices <= vertices.len());
-            unsafe{vertices.set_len(num_vertices)};
+            vertices.truncate(num_vertices);
             vertices
         } else if number_of_contours == -1 {
             // Compound shapes
