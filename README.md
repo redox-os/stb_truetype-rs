@@ -15,7 +15,7 @@ If you want to use this crate directly, add the following to your Cargo.toml:
 
 ```toml
 [dependencies]
-stb_truetype = "0.2.2"
+stb_truetype = "0.2"
 ```
 
 Please note that the documentation provided is also a straight copy from the
@@ -23,8 +23,7 @@ original code.
 
 Currently this port does not include the rasterisation or font querying API
 provided by stb_truetype.h. If you are looking for font rasterisation, that is
-provided by my other project,
-[RustType](https://github.com/dylanede/rusttype).
+provided by [RustType](https://github.com/dylanede/rusttype).
 
 ## License
 
