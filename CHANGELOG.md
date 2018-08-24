@@ -1,5 +1,6 @@
 ## master
 * Add `is_collection(&[u8]) -> bool`.
+* Remove most unsafe usages.
 
 ## 0.2.2
 * Merge a number of bugfixes, update documentation links, add new debugging features.
