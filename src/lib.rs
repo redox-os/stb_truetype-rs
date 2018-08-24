@@ -329,6 +329,27 @@ pub fn get_font_offset_for_index(font_collection: &[u8], index: i32) -> Option<u
    return None;
 }
 
+macro_rules! read_ints {
+    ($n:expr, i16, $data:expr) => {{
+        let mut nums = [0; $n];
+        let data = $data;
+        BE::read_i16_into(&data[..$n * 2], &mut nums);
+        nums
+    }};
+    ($n:expr, u16, $data:expr) => {{
+        let mut nums = [0; $n];
+        let data = $data;
+        BE::read_u16_into(&data[..$n * 2], &mut nums);
+        nums
+    }};
+    ($n:expr, u32, $data:expr) => {{
+        let mut nums = [0; $n];
+        let data = $data;
+        BE::read_u32_into(&data[..$n * 4], &mut nums);
+        nums
+    }};
+}
+
 impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
 
     /// Given an offset into the file that defines a font, this function builds
@@ -523,40 +544,31 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
     }
 
     fn get_glyf_offset(&self, glyph_index: u32) -> Option<u32> {
-        let g1;
-        let g2;
         if glyph_index >= self.num_glyphs || self.index_to_loc_format >= 2 {
             // glyph index out of range or unknown index->glyph map format
             return None;
         }
 
-        if self.index_to_loc_format == 0 {
-            g1 = self.glyf + BE::read_u16(&self.data[(self.loca + glyph_index*2) as usize..]) as u32 * 2;
-            g2 = self.glyf + BE::read_u16(&self.data[(self.loca + glyph_index*2 + 2) as usize..]) as u32 * 2;
+        let [g1, g2] = if self.index_to_loc_format == 0 {
+            let d = &self.data[(self.loca + glyph_index * 2) as usize..];
+            let [g1, g2] = read_ints!(2, u16, d);
+            [g1 as u32 * 2, g2 as u32 * 2]
         } else {
-            g1 = self.glyf + BE::read_u32(&self.data[(self.loca + glyph_index * 4) as usize..]);
-            g2 = self.glyf + BE::read_u32(&self.data[(self.loca + glyph_index * 4 + 4) as usize..]);
-        }
+            read_ints!(2, u32, &self.data[(self.loca + glyph_index * 4) as usize..])
+        };
         if g1 == g2 {
             None
         } else {
-            Some(g1)
+            Some(self.glyf + g1)
         }
     }
 
     /// Like `get_codepoint_box`, but takes a glyph index. Use this if you have cached the glyph index for
     /// a codepoint.
     pub fn get_glyph_box(&self, glyph_index: u32) -> Option<Rect<i16>> {
-        let g = match self.get_glyf_offset(glyph_index) {
-            Some(v) => v as usize,
-            None => return None
-        };
-        Some(Rect {
-            x0: BE::read_i16(&self.data[g + 2..]),
-            y0: BE::read_i16(&self.data[g + 4..]),
-            x1: BE::read_i16(&self.data[g + 6..]),
-            y1: BE::read_i16(&self.data[g + 8..])
-        })
+        let g = self.get_glyf_offset(glyph_index)? as usize;
+        let [x0, y0, x1, y1] = read_ints!(4, i16, &self.data[g + 2..]);
+        Some(Rect { x0, y0, x1, y1 })
     }
 
     /// Gets the bounding box of the visible part of the glyph, in unscaled coordinates
