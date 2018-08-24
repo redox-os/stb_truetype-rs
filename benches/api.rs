@@ -419,7 +419,11 @@ fn scale_for_pixel_height_gudea(b: &mut test::Bencher) {
 fn get_v_metrics_deja_vu_mono(b: &mut test::Bencher) {
     let font = FontInfo::new(&*DEJA_VU_MONO, 0).unwrap();
 
-    let mut v_metrics = VMetrics { ascent: 1, descent: 2, line_gap: 3 };
+    let mut v_metrics = VMetrics {
+        ascent: 1,
+        descent: 2,
+        line_gap: 3,
+    };
     b.iter(|| {
         // repeat so its a similar number of calls to the other benchmarks
         for _ in 0..test::black_box(ALPHABET_SIZE) {
@@ -427,7 +431,11 @@ fn get_v_metrics_deja_vu_mono(b: &mut test::Bencher) {
         }
     });
 
-    let VMetrics { ascent, descent, line_gap } = v_metrics;
+    let VMetrics {
+        ascent,
+        descent,
+        line_gap,
+    } = v_metrics;
     assert_eq!(ascent, 1901);
     assert_eq!(descent, -483);
     assert_eq!(line_gap, 0);
@@ -437,7 +445,11 @@ fn get_v_metrics_deja_vu_mono(b: &mut test::Bencher) {
 fn get_v_metrics_gudea(b: &mut test::Bencher) {
     let font = FontInfo::new(&*GUDEA, 0).unwrap();
 
-    let mut v_metrics = VMetrics { ascent: 1, descent: 2, line_gap: 3 };
+    let mut v_metrics = VMetrics {
+        ascent: 1,
+        descent: 2,
+        line_gap: 3,
+    };
     b.iter(|| {
         // repeat so its a similar number of calls to the other benchmarks
         for _ in 0..test::black_box(ALPHABET_SIZE) {
@@ -445,7 +457,11 @@ fn get_v_metrics_gudea(b: &mut test::Bencher) {
         }
     });
 
-    let VMetrics { ascent, descent, line_gap } = v_metrics;
+    let VMetrics {
+        ascent,
+        descent,
+        line_gap,
+    } = v_metrics;
     assert_eq!(ascent, 972);
     assert_eq!(descent, -264);
     assert_eq!(line_gap, 0);
