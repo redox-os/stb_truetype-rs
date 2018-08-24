@@ -1,3 +1,11 @@
+#![allow(unknown_lints)]
+#![warn(clippy)]
+#![allow(
+    too_many_arguments,
+    cast_lossless,
+    many_single_char_names,
+)]
+
 extern crate byteorder;
 
 use byteorder::{BigEndian as BE, ByteOrder};
@@ -338,7 +346,7 @@ fn find_table(data: &[u8], fontstart: usize, tag: &[u8]) -> u32 {
             return BE::read_u32(&data[loc + 8..]);
         }
     }
-    return 0;
+    0
 }
 
 /// Each .ttf/.ttc file may have more than one font. Each font has a sequential
@@ -353,19 +361,17 @@ pub fn get_font_offset_for_index(font_collection: &[u8], index: i32) -> Option<u
         return if index == 0 { Some(0) } else { None };
     }
     // check if it's a TTC
-    if is_collection(font_collection) {
-        // version 1?
-        if BE::read_u32(&font_collection[4..]) == 0x00010000
-            || BE::read_u32(&font_collection[4..]) == 0x00020000
-        {
-            let n = BE::read_i32(&font_collection[8..]);
-            if index >= n {
-                return None;
-            }
-            return Some(BE::read_u32(&font_collection[12 + (index as usize) * 4..]));
+    if is_collection(font_collection)
+        && (BE::read_u32(&font_collection[4..]) == 0x0001_0000
+            || BE::read_u32(&font_collection[4..]) == 0x0002_0000)
+    {
+        let n = BE::read_i32(&font_collection[8..]);
+        if index >= n {
+            return None;
         }
+        return Some(BE::read_u32(&font_collection[12 + (index as usize) * 4..]));
     }
-    return None;
+    None
 }
 
 macro_rules! read_ints {
@@ -477,7 +483,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 if unicode_codepoint < bytes as u32 - 6 {
                     return index_map[6 + unicode_codepoint as usize] as u32;
                 }
-                return 0;
+                0
             }
             6 => {
                 let first = BE::read_u16(&index_map[6..]) as u32;
@@ -486,7 +492,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     return BE::read_u16(&index_map[10 + (unicode_codepoint - first) as usize * 2..])
                         as u32;
                 }
-                return 0;
+                0
             }
             2 => {
                 // @TODO: high-byte mapping for japanese/chinese/korean
@@ -541,14 +547,14 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                             &index_map[14 + segcount * 4 + 2 + 2 * item..],
                         ) as i32) as u16 as u32;
                     }
-                    return BE::read_u16(
+                    BE::read_u16(
                         &index_map[offset
                                        + (unicode_codepoint - start) as usize * 2
                                        + 14
                                        + segcount * 6
                                        + 2
                                        + 2 * item..],
-                    ) as u32;
+                    ) as u32
                 }
             }
             12 | 13 => {
@@ -641,6 +647,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
     }
     /// Like `get_codepoint_shape`, but takes a glyph index instead. Use this
     /// if you have cached the glyph index for a codepoint.
+    #[allow(cyclomatic_complexity)] // FIXME rework
     pub fn get_glyph_shape(&self, glyph_index: u32) -> Option<Vec<Vertex>> {
         use VertexType::*;
         fn close_shape(
@@ -760,11 +767,9 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     } else {
                         x -= dx;
                     }
-                } else {
-                    if flags & 16 == 0 {
-                        x += points[0] as i32 * 256 + points[1] as i32;
-                        points = &points[2..];
-                    }
+                } else if flags & 16 == 0 {
+                    x += points[0] as i32 * 256 + points[1] as i32;
+                    points = &points[2..];
                 }
                 vertices[off + i].x = x as i16;
             }
@@ -781,11 +786,9 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     } else {
                         y -= dy;
                     }
-                } else {
-                    if flags & 32 == 0 {
-                        y += points[0] as i32 * 256 + points[1] as i32;
-                        points = &points[2..];
-                    }
+                } else if flags & 32 == 0 {
+                    y += points[0] as i32 * 256 + points[1] as i32;
+                    points = &points[2..];
                 }
                 vertices[off + i].y = y as i16;
             }
@@ -855,45 +858,43 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     was_off = false;
                     next_move = 1 + BE::read_u16(&end_points_of_contours[j * 2..]) as usize;
                     j += 1;
-                } else {
-                    if flags & 1 == 0 {
-                        // if it's a curve
-                        if was_off {
-                            // two off-curve control points in a row means interpolate an on-curve
-                            // midpoint
-                            vertices[num_vertices] = Vertex {
-                                type_: CurveTo as u8,
-                                x: ((cx + x) >> 1) as i16,
-                                y: ((cy + y) >> 1) as i16,
-                                cx: cx as i16,
-                                cy: cy as i16,
-                            };
-                            num_vertices += 1;
-                        }
-                        cx = x;
-                        cy = y;
-                        was_off = true;
-                    } else {
-                        if was_off {
-                            vertices[num_vertices] = Vertex {
-                                type_: CurveTo as u8,
-                                x: x as i16,
-                                y: y as i16,
-                                cx: cx as i16,
-                                cy: cy as i16,
-                            }
-                        } else {
-                            vertices[num_vertices] = Vertex {
-                                type_: LineTo as u8,
-                                x: x as i16,
-                                y: y as i16,
-                                cx: 0 as i16,
-                                cy: 0 as i16,
-                            }
-                        }
+                } else if flags & 1 == 0 {
+                    // if it's a curve
+                    if was_off {
+                        // two off-curve control points in a row means interpolate an on-curve
+                        // midpoint
+                        vertices[num_vertices] = Vertex {
+                            type_: CurveTo as u8,
+                            x: ((cx + x) >> 1) as i16,
+                            y: ((cy + y) >> 1) as i16,
+                            cx: cx as i16,
+                            cy: cy as i16,
+                        };
                         num_vertices += 1;
-                        was_off = false;
                     }
+                    cx = x;
+                    cy = y;
+                    was_off = true;
+                } else {
+                    if was_off {
+                        vertices[num_vertices] = Vertex {
+                            type_: CurveTo as u8,
+                            x: x as i16,
+                            y: y as i16,
+                            cx: cx as i16,
+                            cy: cy as i16,
+                        }
+                    } else {
+                        vertices[num_vertices] = Vertex {
+                            type_: LineTo as u8,
+                            x: x as i16,
+                            y: y as i16,
+                            cx: 0 as i16,
+                            cy: 0 as i16,
+                        }
+                    }
+                    num_vertices += 1;
+                    was_off = false;
                 }
                 i += 1;
             }
@@ -974,10 +975,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 let n = (mtx[2] * mtx[2] + mtx[3] * mtx[3]).sqrt();
 
                 // Get indexed glyph.
-                let mut comp_verts = self
-                    .get_glyph_shape(gidx as u32)
-                    .unwrap_or_else(|| Vec::new());
-                if comp_verts.len() > 0 {
+                let mut comp_verts = self.get_glyph_shape(gidx as u32).unwrap_or_else(Vec::new);
+                if !comp_verts.is_empty() {
                     // Transform vertices
                     for v in &mut *comp_verts {
                         let (x, y, cx, cy) = (v.x as f32, v.y as f32, v.cx as f32, v.cy as f32);
@@ -1248,7 +1247,7 @@ impl<'a, Data: 'a + Deref<Target = [u8]>> Iterator for FontNameIter<'a, Data> {
 
         let loc = self.font_info.name as usize + 6 + 12 * self.index;
 
-        let pl_id = platform_id(BE::read_u16(&self.font_info.data[loc + 0..]));
+        let pl_id = platform_id(BE::read_u16(&self.font_info.data[loc..]));
         let platform_encoding_language_id = pl_id.map(|pl_id| {
             let encoding_id = BE::read_u16(&self.font_info.data[loc + 2..]);
             let language_id = BE::read_u16(&self.font_info.data[loc + 4..]);
