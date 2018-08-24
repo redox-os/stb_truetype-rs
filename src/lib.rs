@@ -442,20 +442,22 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
                 }
             }
             12 | 13 => {
-                let ngroups = BE::read_u32(&index_map[12..]) as usize;
-                let mut low = 0;
-                let mut high = ngroups;
+                let mut low = 0u32;
+                let mut high = BE::read_u32(&index_map[12..]);
+                let groups = &index_map[16..];
+
                 // Binary search of the right group
                 while low < high {
-                    let mid = low + ((high - low) >> 1); // rounds down, so low <= mid < high
-                    let start_char = BE::read_u32(&index_map[16 + mid*12..]);
-                    let end_char = BE::read_u32(&index_map[16 + mid*12 + 4..]);
+                    let mid = (low + high) / 2; // rounds down, so low <= mid < high
+                    let mid12 = (mid * 12) as usize;
+                    let group = &groups[mid12..mid12 + 12];
+                    let start_char = BE::read_u32(group);
                     if unicode_codepoint < start_char {
                         high = mid;
-                    } else if unicode_codepoint > end_char {
+                    } else if unicode_codepoint > BE::read_u32(&group[4..]) {
                         low = mid + 1;
                     } else {
-                        let start_glyph = BE::read_u32(&index_map[16 + mid*12 + 8..]);
+                        let start_glyph = BE::read_u32(&group[8..]);
                         if format == 12 {
                             return start_glyph + unicode_codepoint - start_char;
                         } else {
@@ -463,7 +465,8 @@ impl<Data: Deref<Target=[u8]>> FontInfo<Data> {
                         }
                     }
                 }
-                return 0;
+
+                0
             }
             n => panic!("Index map format unsupported: {}", n)
         }
