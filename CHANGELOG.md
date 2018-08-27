@@ -1,4 +1,6 @@
 ## master
+
+## 0.2.3
 * Add `is_collection(&[u8]) -> bool`.
 * Remove most unsafe usages.
 * `VertexType` implements `Eq`.
