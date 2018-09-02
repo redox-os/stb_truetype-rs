@@ -781,8 +781,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 }
                 vertices.push(Vertex {
                     type_: CurveTo as u8,
-                    x: sx as i16,
-                    y: sy as i16,
+                    x: sx,
+                    y: sy,
                     cx: scx,
                     cy: scy,
                 });
@@ -790,16 +790,16 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 vertices.push(if was_off {
                     Vertex {
                         type_: CurveTo as u8,
-                        x: sx as i16,
-                        y: sy as i16,
+                        x: sx,
+                        y: sy,
                         cx,
                         cy,
                     }
                 } else {
                     Vertex {
                         type_: LineTo as u8,
-                        x: sx as i16,
-                        y: sy as i16,
+                        x: sx,
+                        y: sy,
                         cx: 0,
                         cy: 0,
                     }
