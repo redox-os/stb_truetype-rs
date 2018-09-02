@@ -1,10 +1,6 @@
 #![allow(unknown_lints)]
 #![warn(clippy)]
-#![allow(
-    too_many_arguments,
-    cast_lossless,
-    many_single_char_names,
-)]
+#![allow(too_many_arguments, cast_lossless, many_single_char_names,)]
 
 extern crate byteorder;
 
@@ -645,50 +641,58 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
             None => true,
         }
     }
+
     /// Like `get_codepoint_shape`, but takes a glyph index instead. Use this
     /// if you have cached the glyph index for a codepoint.
     #[allow(cyclomatic_complexity)] // FIXME rework
     pub fn get_glyph_shape(&self, glyph_index: u32) -> Option<Vec<Vertex>> {
         use VertexType::*;
+
+        #[derive(Clone)]
+        struct FlagData {
+            flags: u8,
+            x: i16,
+            y: i16,
+        }
+
         fn close_shape(
-            vertices: &mut [Vertex],
-            num_vertices: &mut usize,
+            vertices: &mut Vec<Vertex>,
+            // num_vertices: &mut usize,
             was_off: bool,
             start_off: bool,
-            sx: i32,
-            sy: i32,
-            scx: i32,
-            scy: i32,
-            cx: i32,
-            cy: i32,
+            sx: i16,
+            sy: i16,
+            scx: i16,
+            scy: i16,
+            cx: i16,
+            cy: i16,
         ) {
             use VertexType::*;
             if start_off {
                 if was_off {
-                    vertices[*num_vertices] = Vertex {
+                    vertices.push(Vertex {
                         type_: CurveTo as u8,
-                        x: ((cx + scx) >> 1) as i16,
-                        y: ((cy + scy) >> 1) as i16,
-                        cx: cx as i16,
-                        cy: cy as i16,
-                    };
-                    *num_vertices += 1;
+                        x: (cx + scx) >> 1,
+                        y: (cy + scy) >> 1,
+                        cx,
+                        cy,
+                    });
                 }
-                vertices[*num_vertices] = Vertex {
+                vertices.push(Vertex {
                     type_: CurveTo as u8,
                     x: sx as i16,
                     y: sy as i16,
-                    cx: scx as i16,
-                    cy: scy as i16,
-                };
+                    cx: scx,
+                    cy: scy,
+                });
             } else {
-                vertices[*num_vertices] = if was_off {
+                vertices.push(if was_off {
                     Vertex {
                         type_: CurveTo as u8,
                         x: sx as i16,
                         y: sy as i16,
-                        cx: cx as i16,
-                        cy: cy as i16,
+                        cx,
+                        cy,
                     }
                 } else {
                     Vertex {
@@ -698,9 +702,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                         cx: 0,
                         cy: 0,
                     }
-                };
+                });
             }
-            *num_vertices += 1;
         }
 
         let g = match self.get_glyf_offset(glyph_index) {
@@ -722,10 +725,11 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
 
             let m = n + 2 * number_of_contours; // a loose bound on how many vertices we might need
             let mut vertices: Vec<Vertex> = Vec::with_capacity(m);
-            unsafe { vertices.set_len(m) };
+            // unsafe { vertices.set_len(m) };
+
+            let mut flag_data = Vec::with_capacity(n);
 
             let mut next_move = 0;
-            let mut flagcount = 0;
 
             // in first pass, we load uninterpreted data into the allocated array
             // above, shifted to the end of the array so we won't overwrite it when
@@ -733,86 +737,91 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
 
             // starting offset for uninterpreted data, regardless of how m ends up being
             // calculated
-            let off = m - n;
+            // let off = m - n;
 
             // first load flags
-            let mut flags = 0;
-            for i in 0..n {
-                if flagcount == 0 {
-                    flags = points[0];
-                    points = &points[1..];
-                    if flags & 8 != 0 {
-                        flagcount = points[0];
-                        points = &points[1..];
+            {
+                let mut flagcount = 0;
+                let mut flags = 0;
+                for _ in 0..n {
+                    if flagcount == 0 {
+                        flags = points[0];
+                        if flags & 8 != 0 {
+                            flagcount = points[1];
+                            points = &points[2..];
+                        } else {
+                            points = &points[1..];
+                        }
+                    } else {
+                        flagcount -= 1;
                     }
-                } else {
-                    flagcount -= 1;
+                    flag_data.push(FlagData { flags, x: 0, y: 0 });
                 }
-                vertices[off + i].type_ = flags;
             }
 
             // now load x coordinates
-            let mut x = 0i32;
-            for i in 0..n {
-                let flags = vertices[off + i].type_;
-                if flags == 255 {
-                    println!("{:?}", flags);
-                }
+            let mut x_coord = 0_i16;
+            for flag_data in &mut flag_data {
+                let flags = flag_data.flags;
                 if flags & 2 != 0 {
-                    let dx = points[0] as i32;
+                    let dx = i16::from(points[0]);
                     points = &points[1..];
                     if flags & 16 != 0 {
                         // ???
-                        x += dx;
+                        x_coord += dx;
                     } else {
-                        x -= dx;
+                        x_coord -= dx;
                     }
                 } else if flags & 16 == 0 {
-                    x += points[0] as i32 * 256 + points[1] as i32;
+                    x_coord += BE::read_i16(points);
                     points = &points[2..];
                 }
-                vertices[off + i].x = x as i16;
+                flag_data.x = x_coord;
             }
 
             // now load y coordinates
-            let mut y = 0i32;
-            for i in 0..n {
-                let flags = vertices[off + i].type_;
+            let mut y_coord = 0_i16;
+            for flag_data in &mut flag_data {
+                let flags = flag_data.flags;
                 if flags & 4 != 0 {
-                    let dy = points[0] as i32;
+                    let dy = i16::from(points[0]);
                     points = &points[1..];
                     if flags & 32 != 0 {
-                        y += dy;
+                        y_coord += dy;
                     } else {
-                        y -= dy;
+                        y_coord -= dy;
                     }
                 } else if flags & 32 == 0 {
-                    y += points[0] as i32 * 256 + points[1] as i32;
+                    y_coord += BE::read_i16(points);
                     points = &points[2..];
                 }
-                vertices[off + i].y = y as i16;
+                flag_data.y = y_coord;
             }
 
             // now convert them to our format
-            let mut num_vertices = 0;
+            // let mut num_vertices = 0;
             let mut sx = 0;
             let mut sy = 0;
             let mut cx = 0;
             let mut cy = 0;
             let mut scx = 0;
             let mut scy = 0;
-            let mut i = 0;
+            // let mut i = 0;
             let mut j = 0;
-            while i < n {
-                let flags = vertices[off + i].type_;
-                x = vertices[off + i].x as i32;
-                y = vertices[off + i].y as i32;
 
-                if next_move == i {
-                    if i != 0 {
+            let mut iter = flag_data.into_iter().enumerate().peekable();
+
+            while let Some((index, FlagData { flags, x, y })) = iter.next() {
+                // while i < n {
+                // let flags = vertices[off + i].type_;
+                // x = vertices[off + i].x as i32;
+                // y = vertices[off + i].y as i32;
+
+                if next_move == index {
+                    if index != 0 {
                         close_shape(
-                            &mut vertices[..],
-                            &mut num_vertices,
+                            &mut vertices,
+                            // &mut num_vertices,
                             was_off,
                             start_off,
                             sx,
@@ -833,28 +842,36 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                         // when we wraparound.
                         scx = x;
                         scy = y;
-                        if vertices[off + i + 1].type_ as u8 & 1 == 0 {
+
+                        let (next_flags, next_x, next_y) = {
+                            let peek = &iter.peek().unwrap().1;
+                            (peek.flags, peek.x, peek.y)
+                        };
+
+                        if next_flags & 1 == 0 {
                             // next point is also a curve point, so interpolate an on-point curve
-                            sx = (x + vertices[off + i + 1].x as i32) >> 1;
-                            sy = (y + vertices[off + i + 1].y as i32) >> 1;
+                            sx = (x + next_x) >> 1;
+                            sy = (y + next_y) >> 1;
                         } else {
                             // otherwise just use the next point as our start point
-                            sx = vertices[off + i + 1].x as i32;
-                            sy = vertices[off + i + 1].y as i32;
-                            i += 1; // we're using point i+1 as the starting point, so skip it
+                            sx = next_x;
+                            sy = next_y;
+
+                            let _ = iter.next();
+                            // i += 1; // we're using point i+1 as the starting point, so skip it
                         }
                     } else {
                         sx = x;
                         sy = y;
                     }
-                    vertices[num_vertices] = Vertex {
+                    vertices.push(Vertex {
                         type_: MoveTo as u8,
-                        x: sx as i16,
-                        y: sy as i16,
+                        x: sx,
+                        y: sy,
                         cx: 0,
                         cy: 0,
-                    };
-                    num_vertices += 1;
+                    });
+                    // num_vertices += 1;
                     was_off = false;
                     next_move = 1 + BE::read_u16(&end_points_of_contours[j * 2..]) as usize;
                     j += 1;
@@ -863,44 +880,44 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     if was_off {
                         // two off-curve control points in a row means interpolate an on-curve
                         // midpoint
-                        vertices[num_vertices] = Vertex {
+                        vertices.push(Vertex {
                             type_: CurveTo as u8,
-                            x: ((cx + x) >> 1) as i16,
-                            y: ((cy + y) >> 1) as i16,
-                            cx: cx as i16,
-                            cy: cy as i16,
-                        };
-                        num_vertices += 1;
+                            x: ((cx + x) >> 1),
+                            y: ((cy + y) >> 1),
+                            cx,
+                            cy,
+                        });
+                        // num_vertices += 1;
                     }
                     cx = x;
                     cy = y;
                     was_off = true;
                 } else {
-                    if was_off {
-                        vertices[num_vertices] = Vertex {
+                    vertices.push(if was_off {
+                        Vertex {
                             type_: CurveTo as u8,
-                            x: x as i16,
-                            y: y as i16,
-                            cx: cx as i16,
-                            cy: cy as i16,
+                            x,
+                            y,
+                            cx,
+                            cy,
                         }
                     } else {
-                        vertices[num_vertices] = Vertex {
+                        Vertex {
                             type_: LineTo as u8,
-                            x: x as i16,
-                            y: y as i16,
-                            cx: 0 as i16,
-                            cy: 0 as i16,
+                            x,
+                            y,
+                            cx: 0,
+                            cy: 0,
                         }
-                    }
-                    num_vertices += 1;
+                    });
+                    // num_vertices += 1;
                     was_off = false;
                 }
-                i += 1;
+                // i += 1;
             }
             close_shape(
-                &mut vertices[..],
-                &mut num_vertices,
+                &mut vertices,
+                // &mut num_vertices,
                 was_off,
                 start_off,
                 sx,
@@ -910,8 +927,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 cx,
                 cy,
             );
-            assert!(num_vertices <= vertices.len());
-            vertices.truncate(num_vertices);
+            // assert!(num_vertices <= vertices.len());
+            // vertices.truncate(num_vertices);
             vertices
         } else if number_of_contours == -1 {
             // Compound shapes
