@@ -1,4 +1,5 @@
 ## master
+* Remove all unsafe usage.
 
 ## 0.2.3
 * Add `is_collection(&[u8]) -> bool`.
