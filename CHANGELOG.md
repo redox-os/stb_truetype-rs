@@ -1,5 +1,6 @@
 ## master
 * Remove all unsafe usage.
+* Fix glyph positioning bug for compound glyphs (#18)
 
 ## 0.2.3
 * Add `is_collection(&[u8]) -> bool`.
