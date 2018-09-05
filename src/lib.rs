@@ -675,9 +675,9 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                         mtx[5] = BE::read_i16(comp) as f32;
                         comp = &comp[2..];
                     } else {
-                        mtx[4] = comp[0] as f32;
+                        mtx[4] = (comp[0] as i8) as f32;
                         comp = &comp[1..];
-                        mtx[5] = comp[0] as f32;
+                        mtx[5] = (comp[0] as i8) as f32;
                         comp = &comp[1..];
                     }
                 } else {
