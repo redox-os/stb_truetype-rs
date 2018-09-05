@@ -8,6 +8,7 @@ use stb_truetype::*;
 
 /// index map format 12
 static DEJA_VU_MONO: &[u8] = include_bytes!("../fonts/DejaVuSansMono.ttf");
+static ROBOTO: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 /// index map format 4
 static GUDEA: &[u8] = include_bytes!("../fonts/Gudea-Regular.ttf");
 
@@ -306,6 +307,44 @@ fn get_glyph_shape_gudea(b: &mut test::Bencher) {
             (177, 255, 0, 0, 2),
             (30, 501, 0, 0, 2),
             (113, 501, 0, 0, 2)
+        ]
+    );
+}
+
+#[bench]
+fn get_glyph_shape_compound_glyph_roboto_colon(b: &mut test::Bencher) {
+    let font = FontInfo::new(&*ROBOTO, 0).unwrap();
+
+    let colon_index = font.find_glyph_index(':' as u32);
+
+    let mut shape = None;
+    b.iter(|| {
+        shape = font.get_glyph_shape(colon_index);
+    });
+
+    let shape: Vec<_> = shape.unwrap().iter().map(|v| vertex_to_tuple(*v)).collect();
+
+    assert_eq!(
+        shape,
+        vec![
+            (134, 97, -10, 0, 1),
+            (162, 177, 134, 145, 3),
+            (248, 209, 191, 209, 3),
+            (334, 177, 305, 209, 3),
+            (364, 97, 364, 145, 3),
+            (334, 20, 364, 51, 3),
+            (248, -11, 305, -11, 3),
+            (162, 20, 191, -11, 3),
+            (134, 97, 134, 51, 3),
+            (135, 980, -9, 883, 1),
+            (163, 1060, 135, 1028, 3),
+            (249, 1092, 192, 1092, 3),
+            (335, 1060, 306, 1092, 3),
+            (365, 980, 365, 1028, 3),
+            (335, 903, 365, 934, 3),
+            (249, 872, 306, 872, 3),
+            (163, 903, 192, 872, 3),
+            (135, 980, 135, 934, 3)
         ]
     );
 }

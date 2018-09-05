@@ -661,24 +661,21 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
             while more {
                 let mut mtx = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
-                let flags = BE::read_i16(comp);
-                comp = &comp[2..];
-                let gidx = BE::read_u16(comp);
-                comp = &comp[2..];
+                let [flags, gidx] = read_ints!(2, i16, comp);
+                comp = &comp[4..];
 
                 if flags & 2 != 0 {
                     // XY values
                     if flags & 1 != 0 {
                         // shorts
-                        mtx[4] = BE::read_i16(comp) as f32;
-                        comp = &comp[2..];
-                        mtx[5] = BE::read_i16(comp) as f32;
-                        comp = &comp[2..];
+                        let [a, b] = read_ints!(2, i16, comp);
+                        comp = &comp[4..];
+                        mtx[4] = a as f32;
+                        mtx[5] = b as f32;
                     } else {
                         mtx[4] = (comp[0] as i8) as f32;
-                        comp = &comp[1..];
-                        mtx[5] = (comp[0] as i8) as f32;
-                        comp = &comp[1..];
+                        mtx[5] = (comp[1] as i8) as f32;
+                        comp = &comp[2..];
                     }
                 } else {
                     panic!("Matching points not supported.");
@@ -692,22 +689,20 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     mtx[3] = mtx[0];
                 } else if flags & (1 << 6) != 0 {
                     // WE_HAVE_AN_X_AND_YSCALE
-                    mtx[0] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
+                    let [a, b] = read_ints!(2, i16, comp);
+                    comp = &comp[4..];
+                    mtx[0] = a as f32 / 16384.0;
                     mtx[1] = 0.0;
                     mtx[2] = 0.0;
-                    mtx[3] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
+                    mtx[3] = b as f32 / 16384.0;
                 } else if flags & (1 << 7) != 0 {
                     // WE_HAVE_A_TWO_BY_TWO
-                    mtx[0] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
-                    mtx[1] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
-                    mtx[2] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
-                    mtx[3] = BE::read_i16(comp) as f32 / 16384.0;
-                    comp = &comp[2..];
+                    let [a, b, c, d] = read_ints!(4, i16, comp);
+                    comp = &comp[8..];
+                    mtx[0] = a as f32 / 16384.0;
+                    mtx[1] = b as f32 / 16384.0;
+                    mtx[2] = c as f32 / 16384.0;
+                    mtx[3] = d as f32 / 16384.0;
                 }
 
                 // Find transformation scales.
