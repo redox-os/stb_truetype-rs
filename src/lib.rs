@@ -663,6 +663,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
 
                 let [flags, gidx] = read_ints!(2, i16, comp);
                 comp = &comp[4..];
+                let gidx = gidx as u16;
 
                 if flags & 2 != 0 {
                     // XY values
