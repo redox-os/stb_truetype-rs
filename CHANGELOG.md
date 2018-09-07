@@ -1,6 +1,8 @@
 ## master
+
+## 0.2.4
 * Remove all unsafe usage.
-* Fix glyph positioning bug for compound glyphs (#18)
+* Fix glyph positioning bug for compound glyphs (#18).
 * Optimise compound glyph shape computation.
 
 ## 0.2.3
