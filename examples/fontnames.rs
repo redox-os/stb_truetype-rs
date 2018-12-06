@@ -1,4 +1,4 @@
-#![allow(unknown_lints)]
+#![allow(unknown_lints, renamed_and_removed_lints)]
 
 extern crate stb_truetype;
 
@@ -45,7 +45,8 @@ fn main() {
             }
             Some(_) => Some(Cow::Borrowed("(Unknown encoding)")),
             None => Some(Cow::Borrowed("(Unknown Platform ID)")),
-        }).unwrap_or(Cow::Borrowed("(Encoding error)"));
+        })
+        .unwrap_or(Cow::Borrowed("(Encoding error)"));
         println!("{:?}, {:?}, {:?}", name, pl_en_la, na);
     }
 }

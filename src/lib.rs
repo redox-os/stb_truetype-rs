@@ -1,6 +1,6 @@
-#![allow(unknown_lints)]
+#![allow(unknown_lints, renamed_and_removed_lints)]
 #![warn(clippy)]
-#![allow(too_many_arguments, cast_lossless, many_single_char_names,)]
+#![allow(too_many_arguments, cast_lossless, many_single_char_names)]
 
 extern crate byteorder;
 
@@ -119,7 +119,7 @@ pub enum PlatformId {
     Microsoft = 3,
 }
 fn platform_id(v: u16) -> Option<PlatformId> {
-    use PlatformId::*;
+    use crate::PlatformId::*;
     match v {
         0 => Some(Unicode),
         1 => Some(Mac),
@@ -141,7 +141,7 @@ pub enum UnicodeEid {
     Unicode_2_0_Full = 4,
 }
 fn unicode_eid(v: u16) -> Option<UnicodeEid> {
-    use UnicodeEid::*;
+    use crate::UnicodeEid::*;
     match v {
         0 => Some(Unicode_1_0),
         1 => Some(Unicode_1_1),
@@ -162,7 +162,7 @@ pub enum MicrosoftEid {
     UnicodeFull = 10,
 }
 fn microsoft_eid(v: u16) -> Option<MicrosoftEid> {
-    use MicrosoftEid::*;
+    use crate::MicrosoftEid::*;
     match v {
         0 => Some(Symbol),
         1 => Some(UnicodeBMP),
@@ -186,7 +186,7 @@ pub enum MacEid {
     Russian = 7,
 }
 fn mac_eid(v: u16) -> Option<MacEid> {
-    use MacEid::*;
+    use crate::MacEid::*;
     match v {
         0 => Some(Roman),
         1 => Some(Japanese),
@@ -219,7 +219,7 @@ pub enum MicrosoftLang {
     Swedish = 0x041D,
 }
 fn microsoft_lang(v: u16) -> Option<MicrosoftLang> {
-    use MicrosoftLang::*;
+    use crate::MicrosoftLang::*;
     match v {
         0x0409 => Some(English),
         0x0804 => Some(Chinese),
@@ -256,7 +256,7 @@ pub enum MacLang {
     ChineseTrad = 19,
 }
 fn mac_lang(v: u16) -> Option<MacLang> {
-    use MacLang::*;
+    use crate::MacLang::*;
     match v {
         0 => Some(English),
         12 => Some(Arabic),
@@ -539,17 +539,17 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     let offset =
                         BE::read_u16(&index_map[14 + segcount * 6 + 2 + 2 * item..]) as usize;
                     if offset == 0 {
-                        return (unicode_codepoint as i32 + BE::read_i16(
-                            &index_map[14 + segcount * 4 + 2 + 2 * item..],
-                        ) as i32) as u16 as u32;
+                        return (unicode_codepoint as i32
+                            + BE::read_i16(&index_map[14 + segcount * 4 + 2 + 2 * item..]) as i32)
+                            as u16 as u32;
                     }
                     BE::read_u16(
                         &index_map[offset
-                                       + (unicode_codepoint - start) as usize * 2
-                                       + 14
-                                       + segcount * 6
-                                       + 2
-                                       + 2 * item..],
+                            + (unicode_codepoint - start) as usize * 2
+                            + 14
+                            + segcount * 6
+                            + 2
+                            + 2 * item..],
                     ) as u32
                 }
             }
@@ -745,7 +745,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
         glyph_data: &[u8],
         number_of_contours: usize,
     ) -> Vec<Vertex> {
-        use VertexType::*;
+        use crate::VertexType::*;
 
         struct FlagData {
             flags: u8,
@@ -1010,9 +1010,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 ) as i32,
                 left_side_bearing: BE::read_i16(
                     &self.data[self.hmtx as usize
-                                   + 4 * num_of_long_hor_metrics
-                                   + 2 * (glyph_index as isize - num_of_long_hor_metrics as isize)
-                                       as usize..],
+                        + 4 * num_of_long_hor_metrics
+                        + 2 * (glyph_index as isize - num_of_long_hor_metrics as isize) as usize..],
                 ) as i32,
             }
         }
