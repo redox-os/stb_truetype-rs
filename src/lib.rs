@@ -1,6 +1,10 @@
-#![allow(unknown_lints, renamed_and_removed_lints)]
-#![warn(clippy)]
-#![allow(too_many_arguments, cast_lossless, many_single_char_names)]
+#![allow(unknown_lints)]
+#![warn(clippy::all)]
+#![allow(
+    clippy::too_many_arguments,
+    clippy::cast_lossless,
+    clippy::many_single_char_names
+)]
 
 extern crate byteorder;
 
