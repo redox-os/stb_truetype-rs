@@ -1,7 +1,5 @@
 #![allow(unknown_lints)]
 
-extern crate stb_truetype;
-
 use stb_truetype::FontInfo;
 use std::borrow::Cow;
 

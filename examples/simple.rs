@@ -1,7 +1,6 @@
-extern crate stb_truetype;
-
 use stb_truetype::FontInfo;
 use std::borrow::Cow;
+
 fn main() {
     let file = include_bytes!("../fonts/Gudea-Regular.ttf") as &[u8];
     let font = FontInfo::new(Cow::Borrowed(file), 0).unwrap();
