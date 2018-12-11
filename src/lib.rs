@@ -6,8 +6,6 @@
     clippy::many_single_char_names
 )]
 
-extern crate byteorder;
-
 use byteorder::{BigEndian as BE, ByteOrder};
 use std::ops::Deref;
 
@@ -1195,7 +1193,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
         self.get_codepoint_bitmap_box_subpixel(codepoint, scale_x, scale_y, 0.0, 0.0)
     }
 
-    pub fn get_font_name_strings(&self) -> FontNameIter<Data> {
+    pub fn get_font_name_strings(&self) -> FontNameIter<'_, Data> {
         let nm = self.name as usize;
         if nm == 0 {
             return FontNameIter {
@@ -1218,7 +1216,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
 }
 
 #[derive(Clone, Copy)]
-pub struct FontNameIter<'a, Data: 'a + Deref<Target = [u8]>> {
+pub struct FontNameIter<'a, Data: Deref<Target = [u8]>> {
     /// Font info.
     font_info: &'a FontInfo<Data>,
     string_offset: usize,

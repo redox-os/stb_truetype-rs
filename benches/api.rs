@@ -1,9 +1,7 @@
 #![feature(test)]
-extern crate stb_truetype;
 extern crate test;
-#[macro_use]
-extern crate approx;
 
+use approx::*;
 use stb_truetype::*;
 
 /// index map format 12
