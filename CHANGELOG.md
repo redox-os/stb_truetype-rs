@@ -1,5 +1,8 @@
 ## master
 
+## 0.2.5
+* Fix `get_glyph_shape` panic with Consolas character `\u{feff}`.
+
 ## 0.2.4
 * Remove all unsafe usage.
 * Fix glyph positioning bug for compound glyphs (#18).
