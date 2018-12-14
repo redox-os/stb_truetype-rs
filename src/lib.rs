@@ -909,9 +909,9 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                     scx = x;
                     scy = y;
 
-                    let (next_flags, next_x, next_y) = {
-                        let peek = &iter.peek().unwrap().1;
-                        (peek.flags, peek.x, peek.y)
+                    let (next_flags, next_x, next_y) = match iter.peek() {
+                        Some((_, fd)) => (fd.flags, fd.x, fd.y),
+                        None => break,
                     };
 
                     if next_flags & 1 == 0 {
