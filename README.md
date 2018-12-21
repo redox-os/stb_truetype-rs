@@ -16,6 +16,9 @@ Currently this port does not include the rasterisation or font querying API
 provided by stb_truetype.h. If you are looking for font rasterisation, that is
 provided by [RustType](https://gitlab.redox-os.org/redox-os/rusttype).
 
+## Minimum supported rust compiler
+This crate is maintained with [latest stable rust](https://gist.github.com/alexheretic/d1e98d8433b602e57f5d0a9637927e0c).
+
 ## License
 
 Licensed under either of
