@@ -9,7 +9,7 @@
 use byteorder::{BigEndian as BE, ByteOrder};
 use std::ops::Deref;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct FontInfo<Data: Deref<Target = [u8]>> {
     data: Data, // pointer to .ttf file
     // fontstart: usize,       // offset of start of font
@@ -25,7 +25,7 @@ pub struct FontInfo<Data: Deref<Target = [u8]>> {
     index_to_loc_format: u32, // format needed to map from glyph index to glyph
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub struct Vertex {
     pub x: i16,
@@ -82,7 +82,7 @@ fn test_invalid_vertex_type() {
     println!("{}", s);
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum VertexType {
     MoveTo = 1,
@@ -90,7 +90,7 @@ pub enum VertexType {
     CurveTo = 3,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Rect<T> {
     pub x0: T,
     pub y0: T,
@@ -98,13 +98,13 @@ pub struct Rect<T> {
     pub y1: T,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct HMetrics {
     pub advance_width: i32,
     pub left_side_bearing: i32,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct VMetrics {
     pub ascent: i32,
     pub descent: i32,
@@ -1215,7 +1215,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct FontNameIter<'a, Data: Deref<Target = [u8]>> {
     /// Font info.
     font_info: &'a FontInfo<Data>,

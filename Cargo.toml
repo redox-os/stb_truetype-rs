@@ -12,7 +12,7 @@ keywords = ["font", "truetype", "opentype", "ttf", "otf"]
 exclude = ["/fonts/**"]
 
 [dependencies]
-byteorder = "1.0"
+byteorder = "1"
 
 [dev-dependencies]
 approx = { version = "0.3", default-features = false }
