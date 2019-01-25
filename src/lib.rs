@@ -9,7 +9,7 @@
 use byteorder::{BigEndian as BE, ByteOrder};
 use std::ops::Deref;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug)]
 pub struct FontInfo<Data: Deref<Target = [u8]>> {
     data: Data, // pointer to .ttf file
     // fontstart: usize,       // offset of start of font
@@ -1215,7 +1215,7 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct FontNameIter<'a, Data: Deref<Target = [u8]>> {
     /// Font info.
     font_info: &'a FontInfo<Data>,
