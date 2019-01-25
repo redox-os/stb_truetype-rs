@@ -1,4 +1,7 @@
-## master
+## Unreleased
+* Implement `Copy` for `FontInfo`.
+* Implement `PartialEq`, `Eq`, `Hash` for `Vertex`, `VertexType`, `Rect`, `HMetrics`, `VMetrics`.
+* Require byteorder `1.1` as a minimum to avoid compile errors with earlier versions.
 
 ## 0.2.5
 * Fix `get_glyph_shape` panic with Consolas character `\u{feff}`.
