@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.6
 * Implement `Copy` for `FontInfo`.
 * Implement `PartialEq`, `Eq`, `Hash` for `Vertex`, `VertexType`, `Rect`, `HMetrics`, `VMetrics`.
 * Require byteorder `1.1` as a minimum to avoid compile errors with earlier versions.
