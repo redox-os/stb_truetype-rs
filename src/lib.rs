@@ -5,6 +5,7 @@
     clippy::cast_lossless,
     clippy::many_single_char_names
 )]
+#![no_std]
 
 use byteorder::{BigEndian as BE, ByteOrder};
 use std::ops::Deref;
