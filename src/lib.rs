@@ -5,10 +5,21 @@
     clippy::cast_lossless,
     clippy::many_single_char_names
 )]
-#![no_std]
+#![cfg_attr(feature = "no_std", no_std)]
+#![cfg_attr(feature = "no_std", feature(alloc))]
+#![cfg_attr(feature = "no_std", feature(core_intrinsics))]
 
+#[cfg(feature = "no_std")]
+extern crate alloc;
+#[cfg(feature = "no_std")]
+extern crate core as std;
+
+#[cfg(feature = "no_std")]
+use alloc::vec::Vec;
 use byteorder::{BigEndian as BE, ByteOrder};
 use std::ops::Deref;
+
+mod math;
 
 #[derive(Copy, Clone, Debug)]
 pub struct FontInfo<Data: Deref<Target = [u8]>> {
@@ -710,8 +721,8 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
                 }
 
                 // Find transformation scales.
-                let m = (mtx[0] * mtx[0] + mtx[1] * mtx[1]).sqrt();
-                let n = (mtx[2] * mtx[2] + mtx[3] * mtx[3]).sqrt();
+                let m = math::sqrt(mtx[0] * mtx[0] + mtx[1] * mtx[1]);
+                let n = math::sqrt(mtx[2] * mtx[2] + mtx[3] * mtx[3]);
 
                 // Get indexed glyph.
                 let mut comp_verts = self.get_glyph_shape(gidx as u32).unwrap_or_else(Vec::new);
@@ -1139,10 +1150,10 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
             // move to integral bboxes (treating pixels as little squares, what pixels get
             // touched?)
             Some(Rect {
-                x0: (glyph_box.x0 as f32 * scale_x + shift_x).floor() as i32,
-                y0: (-glyph_box.y1 as f32 * scale_y + shift_y).floor() as i32,
-                x1: (glyph_box.x1 as f32 * scale_x + shift_x).ceil() as i32,
-                y1: (-glyph_box.y0 as f32 * scale_y + shift_y).ceil() as i32,
+                x0: math::floor(glyph_box.x0 as f32 * scale_x + shift_x) as i32,
+                y0: math::floor(-glyph_box.y1 as f32 * scale_y + shift_y) as i32,
+                x1: math::ceil(glyph_box.x1 as f32 * scale_x + shift_x) as i32,
+                y1: math::ceil(-glyph_box.y0 as f32 * scale_y + shift_y) as i32,
             })
         } else {
             // e.g. space character
