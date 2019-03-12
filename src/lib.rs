@@ -13,10 +13,12 @@
 extern crate alloc;
 #[cfg(feature = "no_std")]
 extern crate core as std;
+extern crate num_traits;
 
 #[cfg(feature = "no_std")]
 use alloc::vec::Vec;
 use byteorder::{BigEndian as BE, ByteOrder};
+use num_traits::float::FloatCore;
 use std::ops::Deref;
 
 mod math;
@@ -1150,10 +1152,10 @@ impl<Data: Deref<Target = [u8]>> FontInfo<Data> {
             // move to integral bboxes (treating pixels as little squares, what pixels get
             // touched?)
             Some(Rect {
-                x0: math::floor(glyph_box.x0 as f32 * scale_x + shift_x) as i32,
-                y0: math::floor(-glyph_box.y1 as f32 * scale_y + shift_y) as i32,
-                x1: math::ceil(glyph_box.x1 as f32 * scale_x + shift_x) as i32,
-                y1: math::ceil(-glyph_box.y0 as f32 * scale_y + shift_y) as i32,
+                x0: (glyph_box.x0 as f32 * scale_x + shift_x).floor() as i32,
+                y0: (-glyph_box.y1 as f32 * scale_y + shift_y).floor() as i32,
+                x1: (glyph_box.x1 as f32 * scale_x + shift_x).ceil() as i32,
+                y1: (-glyph_box.y0 as f32 * scale_y + shift_y).ceil() as i32,
             })
         } else {
             // e.g. space character
