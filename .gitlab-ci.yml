@@ -8,12 +8,8 @@ before_script:
 - rustup toolchain add $toolchain
 
 variables:
-  CARGO_HOME: $CI_PROJECT_DIR/cargo
-
-cache:
-  paths:
-  - target/
-  - cargo/
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
 
 build:stable:
   stage: build
@@ -30,7 +26,6 @@ test:stable:
   - build:stable
   script:
   - cargo +stable test -v
-
 
 build:nightly:
   stage: build
