@@ -1,4 +1,3 @@
-#![allow(unknown_lints)]
 #![warn(clippy::all)]
 #![allow(
     clippy::too_many_arguments,
