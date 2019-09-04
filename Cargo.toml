@@ -12,7 +12,12 @@ keywords = ["font", "truetype", "opentype", "ttf", "otf"]
 exclude = ["/fonts/**"]
 
 [dependencies]
-byteorder = "1.1"
+byteorder = { version = "1.1", default-features = false }
+libm = { version = "0.1.4", optional = true }
+
+[features]
+default = ["std"]
+std = []
 
 [dev-dependencies]
 approx = { version = "0.3", default-features = false }

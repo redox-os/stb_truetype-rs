@@ -4,9 +4,18 @@
     clippy::cast_lossless,
     clippy::many_single_char_names
 )]
+#![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 use byteorder::{BigEndian as BE, ByteOrder};
-use std::ops::Deref;
+use core::ops::Deref;
+#[cfg(all(feature = "libm", not(feature = "std")))]
+use libm::F32Ext;
+
+#[cfg(not(any(feature = "libm", feature = "std")))]
+compile_error!("You need to activate either the `std` or `libm` feature.");
 
 #[derive(Copy, Clone, Debug)]
 pub struct FontInfo<Data: Deref<Target = [u8]>> {
