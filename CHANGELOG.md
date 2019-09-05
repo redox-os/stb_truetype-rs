@@ -1,3 +1,9 @@
+## 0.2.7
+* Support no-std usage by disabling new default feature `std`.
+```rust
+stb_truetype = { version = "0.2", default-features = false, features = ["libm"] }
+```
+
 ## 0.2.6
 * Implement `Copy` for `FontInfo`.
 * Implement `PartialEq`, `Eq`, `Hash` for `Vertex`, `VertexType`, `Rect`, `HMetrics`, `VMetrics`.
