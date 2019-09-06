@@ -7,20 +7,12 @@ stages:
 before_script:
 - rustup toolchain add $toolchain
 
-variables:
-  CARGO_HOME: $CI_PROJECT_DIR/cargo
-
-cache:
-  paths:
-  - target/
-  - cargo/
-
 build:stable:
   stage: build
   variables:
     toolchain: stable
   script:
-  - cargo +stable build -v
+  - cargo +stable build
 
 test:stable:
   stage: test
@@ -29,33 +21,7 @@ test:stable:
   dependencies:
   - build:stable
   script:
-  - cargo +stable test -v
-
-
-build:nightly:
-  stage: build
-  variables:
-    toolchain: nightly
-  script:
-  - cargo +nightly build -v
-
-test:nightly:
-  stage: test
-  variables:
-    toolchain: nightly
-  dependencies:
-  - build:nightly
-  script:
-  - cargo +nightly test -v
-
-test:benches:
-  stage: test
-  variables:
-    toolchain: nightly
-  dependencies:
-  - build:nightly
-  script:
-  - cargo +nightly test --bench api
+  - cargo +stable test
 
 build:redox:
   stage: build
