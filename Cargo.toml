@@ -12,7 +12,5 @@ keywords = ["font", "truetype", "opentype", "ttf", "otf"]
 exclude = ["/fonts/**"]
 
 [dependencies]
-byteorder = "1.1"
-
-[dev-dependencies]
-approx = { version = "0.3", default-features = false }
+# 0.3 is identical when using default-features
+stb_truetype_next = { version = "0.3", package = "stb_truetype" }
