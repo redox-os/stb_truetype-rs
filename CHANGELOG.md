@@ -4,6 +4,12 @@
 stb_truetype = { version = "0.2", default-features = false, features = ["libm"] }
 ```
 
+## 0.2.8
+* Use semver trick to re-expect stb_truetype `0.3` with default-features on.
+
+## 0.2.7
+_yanked_
+
 ## 0.2.6
 * Implement `Copy` for `FontInfo`.
 * Implement `PartialEq`, `Eq`, `Hash` for `Vertex`, `VertexType`, `Rect`, `HMetrics`, `VMetrics`.
