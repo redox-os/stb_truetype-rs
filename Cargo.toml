@@ -1,6 +1,6 @@
 [package]
 name = "stb_truetype"
-version = "0.2.7"
+version = "0.3.0"
 authors = ["Dylan Ede <dylanede@googlemail.com>", "Alex Butler <alexheretic@gmail.com>"]
 edition = "2018"
 description = "A straight translation of the font loading code in stb_truetype.h from C to Rust."

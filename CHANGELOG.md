@@ -1,4 +1,4 @@
-## 0.2.7
+## 0.3
 * Support no-std usage by disabling new default feature `std`.
 ```rust
 stb_truetype = { version = "0.2", default-features = false, features = ["libm"] }
