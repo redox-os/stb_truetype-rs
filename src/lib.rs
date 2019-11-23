@@ -11,11 +11,31 @@ extern crate alloc;
 use alloc::vec::Vec;
 use byteorder::{BigEndian as BE, ByteOrder};
 use core::ops::Deref;
-#[cfg(all(feature = "libm", not(feature = "std")))]
-use libm::F32Ext;
 
 #[cfg(not(any(feature = "libm", feature = "std")))]
 compile_error!("You need to activate either the `std` or `libm` feature.");
+
+#[cfg(all(feature = "libm", not(feature = "std")))]
+trait FloatExt {
+    fn floor(self) -> Self;
+    fn ceil(self) -> Self;
+    fn sqrt(self) -> Self;
+}
+#[cfg(all(feature = "libm", not(feature = "std")))]
+impl FloatExt for f32 {
+    #[inline]
+    fn floor(self) -> Self {
+        libm::floorf(self)
+    }
+    #[inline]
+    fn ceil(self) -> Self {
+        libm::ceilf(self)
+    }
+    #[inline]
+    fn sqrt(self) -> Self {
+        libm::sqrtf(self)
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct FontInfo<Data: Deref<Target = [u8]>> {

@@ -1,3 +1,6 @@
+## Unreleased
+* Update libm -> `0.2.1`.
+
 ## 0.3
 * Support no-std usage by disabling new default feature `std`.
 ```rust
