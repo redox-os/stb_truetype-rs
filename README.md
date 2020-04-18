@@ -3,6 +3,8 @@
 [![Crates.io](https://img.shields.io/crates/v/stb_truetype.svg)](https://crates.io/crates/stb_truetype)
 [![docs.rs](https://docs.rs/stb_truetype/badge.svg)](https://docs.rs/stb_truetype/)
 
+**This code is no longer maintained.** This crate was maintained for use in rusttype which has switched to use [ttf-parser](https://crates.io/crates/ttf-parser).
+
 This is a translation of the font loading code in
 [stb_truetype.h](https://github.com/nothings/stb/blob/master/stb_truetype.h)
 from C to Rust. It is intended as a stopgap dependency for libraries that deal
@@ -17,7 +19,7 @@ provided by stb_truetype.h. If you are looking for font rasterisation, that is
 provided by [RustType](https://gitlab.redox-os.org/redox-os/rusttype).
 
 ## Minimum supported rust compiler
-This crate is maintained with [latest stable rust](https://gist.github.com/alexheretic/d1e98d8433b602e57f5d0a9637927e0c).
+This crate was maintained with [latest stable rust](https://gist.github.com/alexheretic/d1e98d8433b602e57f5d0a9637927e0c).
 
 ## License
 
